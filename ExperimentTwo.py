@@ -936,9 +936,10 @@ def run_exp_racos_for_synthetic_problem_analysis():
 
 
 def run_exp_racos_for_synthetic_problem_analysis_ensemble():
+    path = '/home/amax/Desktop/ExpAdaptation'
     # parameters
     sample_size = 10  # the instance number of sampling in an iteration
-    budget = 500  # budget in online style
+    budget = 50  # budget in online style
     positive_num = 2  # the set size of PosPop
     rand_probability = 0.99  # the probability of sample in model
     uncertain_bit = 1  # the dimension size that is sampled randomly
@@ -959,10 +960,10 @@ def run_exp_racos_for_synthetic_problem_analysis_ensemble():
     log_buffer = []
 
     # logging
-    learner_path = './ExpLearner/SyntheticProbsLearner/' + problem_name + '/dimension' + str(dimension_size) \
+    learner_path = path+'/ExpLearner/SyntheticProbsLearner/' + problem_name + '/dimension' + str(dimension_size) \
                    + '/DirectionalModel/' + 'learner-' + problem_name + '-' + 'dim' + str(dimension_size) + '-' \
                    + 'bias' + str(bias_region) + '-'
-    problem_path = './ExpLog/SyntheticProbsLog/' + problem_name + '/dimension' + str(dimension_size) \
+    problem_path = path+'/ExpLog/SyntheticProbsLog/' + problem_name + '/dimension' + str(dimension_size) \
                    + '/RecordLog/' + 'bias-' + problem_name + '-' + 'dim' + str(dimension_size) + '-' \
                    + 'bias' + str(bias_region) + '-'
 
@@ -1054,7 +1055,7 @@ def run_exp_racos_for_synthetic_problem_analysis_ensemble():
     log_buffer.append('--------------------------------------------------')
     log_buffer.append('optimization result: ' + str(opt_mean) + '#' + str(opt_std))
 
-    result_path = './Results/SyntheticProbs/ExperimentTwo/' + problem_name + '/dimension' + str(dimension_size) + '/'
+    result_path = path+'/Results/SyntheticProbs/ExperimentTwo/' + problem_name + '/dimension' + str(dimension_size) + '/'
     relate_error_file = result_path + 'relate-error-' + problem_name + '-dim' + str(dimension_size) + '-bias' \
                         + str(bias_region) + '2000sphere-ensemble.txt'
     temp_buffer = []
@@ -1066,7 +1067,7 @@ def run_exp_racos_for_synthetic_problem_analysis_ensemble():
     fo.FileWriter(relate_error_file, temp_buffer, style='w')
 
     optimization_log_file = result_path + 'opt-log-' + problem_name + '-dim' + str(dimension_size) + '-bias' \
-                            + str(bias_region) + '.txt'
+                            + str(bias_region) + '2000sphere-ensemble.txt'
     print('optimization logging: ', optimization_log_file)
     fo.FileWriter(optimization_log_file, log_buffer, style='w')
 
@@ -1078,10 +1079,10 @@ def run_exp_racos_for_synthetic_problem_analysis_ensemble():
     problem_name='ackley'
 
     # logging
-    learner_path = './ExpLearner/SyntheticProbsLearner/' + problem_name + '/dimension' + str(dimension_size) \
+    learner_path = path+'/ExpLearner/SyntheticProbsLearner/' + problem_name + '/dimension' + str(dimension_size) \
                    + '/DirectionalModel/' + 'learner-' + problem_name + '-' + 'dim' + str(dimension_size) + '-' \
                    + 'bias' + str(bias_region) + '-'
-    problem_path = './ExpLog/SyntheticProbsLog/' + problem_name + '/dimension' + str(dimension_size) \
+    problem_path = path+'/ExpLog/SyntheticProbsLog/' + problem_name + '/dimension' + str(dimension_size) \
                    + '/RecordLog/' + 'bias-' + problem_name + '-' + 'dim' + str(dimension_size) + '-' \
                    + 'bias' + str(bias_region) + '-'
 
@@ -1125,7 +1126,7 @@ def run_exp_racos_for_synthetic_problem_analysis_ensemble():
         print('learner file: ', learner_file)
 
         net = torch.load(learner_file)
-        net_ensemble.append(net)
+        net_ensemble[1000+prob_i]=net
 
     opt_error_list = []
 
@@ -1164,9 +1165,9 @@ def run_exp_racos_for_synthetic_problem_analysis_ensemble():
     log_buffer.append('--------------------------------------------------')
     log_buffer.append('optimization result: ' + str(opt_mean) + '#' + str(opt_std))
 
-    result_path = './Results/SyntheticProbs/ExperimentTwo/' + problem_name + '/dimension' + str(dimension_size) + '/'
+    result_path = path+'/Results/SyntheticProbs/ExperimentTwo/' + problem_name + '/dimension' + str(dimension_size) + '/'
     relate_error_file = result_path + 'relate-error-' + problem_name + '-dim' + str(dimension_size) + '-bias' \
-                        + str(bias_region) + '2000sphere-ensemble.txt'
+                        + str(bias_region) + 'half-sphere-half-ackley-ensemble.txt'
     temp_buffer = []
     for i in range(len(relate_error_list)):
         relate, error = relate_error_list[i]
@@ -1176,7 +1177,7 @@ def run_exp_racos_for_synthetic_problem_analysis_ensemble():
     fo.FileWriter(relate_error_file, temp_buffer, style='w')
 
     optimization_log_file = result_path + 'opt-log-' + problem_name + '-dim' + str(dimension_size) + '-bias' \
-                            + str(bias_region) + '.txt'
+                            + str(bias_region) + 'half-sphere-half-ackley-ensemble.txt'
     print('optimization logging: ', optimization_log_file)
     fo.FileWriter(optimization_log_file, log_buffer, style='w')
 
