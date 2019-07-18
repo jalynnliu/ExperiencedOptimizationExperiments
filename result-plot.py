@@ -36,11 +36,11 @@ def meanScatter():
             t += 1
             if t == len(a): break
         if s != t:
-        y.append(np.mean(errors[s:t]))
-        s = t
-        x.append(x[-1] + stride)
-    else:
-        x[-1] += stride
+            y.append(np.mean(errors[s:t]))
+            s = t
+            x.append(x[-1] + stride)
+        else:
+            x[-1] += stride
 
     del x[-1]
     plt.scatter(x, y)
