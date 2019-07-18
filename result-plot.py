@@ -1,9 +1,11 @@
 import numpy as np
 import matplotlib.pyplot as plt
 path = '/home/amax/Desktop/ExpAdaptation'
-f=open(path+'/Results/SyntheticProbs/sphere/dimension10/opt-log-sphere-dim10-bias0.5.txt')
+
 a=[]
-for i in range(2000):
+for j in range(5):
+ f = open(path + '/Results/SyntheticProbs/sphere/dimension10/opt-log-sphere-dim10-bias0.5.txt')
+ for i in range(2000):
     line=f.readline()
     while line.split(' ')[0]!='source':
         line=f.readline()
