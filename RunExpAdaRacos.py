@@ -7,6 +7,45 @@ from Tools import list2string, string2list
 import FileOperator as fo
 import time
 from Run_Racos import time_formulate
+from torch.autograd import Variable
+import torch.nn as nn
+import torch.nn.functional as F
+import torch.optim as optim
+import torch
+
+path = '/home/amax/Desktop/ExpAdaptation'
+
+class ImageNet(nn.Module):
+
+    def __init__(self, middle_input_size=0, output_size=0):
+        super(ImageNet, self).__init__()
+
+        self.conv1 = nn.Conv2d(1, 4, 2)
+        self.conv2 = nn.Conv2d(4, 8, 2)
+        self.pool1 = nn.MaxPool2d(2, 1)
+        self.pool2 = nn.MaxPool2d(1, 2)
+        self.fc1 = nn.Linear(128 + middle_input_size , 256)
+        # self.dropout_linear1 = nn.Dropout2d(p=drop)
+        self.fc2 = nn.Linear(256, 64)
+        # self.dropout_linear2 = nn.Dropout2d(p=drop)
+        self.fc3 = nn.Linear(64, output_size)
+        # self.dropout_linear3 = nn.Dropout2d(p=drop)
+
+    def forward(self, x):
+        x2 = x[:, 0, x.size(2) - 1, :]
+        x1 = x[:, :, 0:x.size(2) - 1, :]
+        x1=F.relu(self.conv1(x1))
+        x1 = self.pool1(x1)
+        x1 = self.pool2(F.relu(self.conv2(x1)))
+
+        x1 = x1.view(-1, x1.size(1) * x1.size(2) * x1.size(3))
+        x = torch.cat((x1, x2), -1)
+
+        x = F.relu(self.fc1(x))
+        x = F.relu(self.fc2(x))
+        x = F.sigmoid(self.fc3(x))
+
+        return x
 
 
 class ExpContainer(object):
@@ -26,13 +65,13 @@ def get_predicotrs():
 
     if True:
 
-        problem_name = 'ackley'
+        problem_name = 'sphere'
         dimension_size = 10
-        bias_region = 0.2
-        learner_num = 200
+        bias_region = 0.5
+        learner_num = 2000
         start_index = 0
 
-        learner_path = './ExpLearner/SyntheticProbsLearner/' + problem_name + '/dimension' + str(dimension_size) \
+        learner_path = path+'/ExpLearner/SyntheticProbsLearner/' + problem_name + '/dimension' + str(dimension_size) \
                        + '/DirectionalModel/' + 'learner-' + problem_name + '-' + 'dim' + str(dimension_size) + '-' \
                        + 'bias' + str(bias_region) + '-'
 
@@ -64,11 +103,11 @@ def run_for_synthetic_problem():
     uncertain_bit = 1           # the dimension size that is sampled randomly
     adv_threshold = 10          # advance sample size
 
-    opt_repeat = 3
+    opt_repeat = 10
 
     dimension_size = 10
-    problem_name = 'ackley'
-    bias_region = 0.2
+    problem_name = 'sphere'
+    bias_region = 0.5
 
     eta = 0.9
 
@@ -79,7 +118,7 @@ def run_for_synthetic_problem():
     log_buffer = []
 
     # problem define
-    func = DistributedFunction(dimension, bias_region == [-0.2, 0.2])
+    func = DistributedFunction(dimension, bias_region = [-0.5, 0.5])
     target_bias = [0.1 for _ in range(dimension_size)]
     func.setBias(target_bias)
 
@@ -144,7 +183,7 @@ def run_for_synthetic_problem():
     log_buffer.append('--------------------------------------------------')
     log_buffer.append('optimization result: ' + str(opt_mean) + '#' + str(opt_std))
 
-    result_path = './Results/SyntheticProbs/' + problem_name + '/dimension' + str(dimension_size) + '/'
+    result_path = path+'/Results/Ada/' + problem_name + '/dimension' + str(dimension_size) + '/'
 
     optimization_log_file = result_path + 'opt-log-' + problem_name + '-dim' + str(dimension_size) + '-bias' \
                             + str(bias_region) + '.txt'

@@ -635,7 +635,7 @@ def learning_exp():
 
     return
 
-def run_exp_racos_for_synthetic_problem_analysis():
+def run_exp_racos_for_synthetic_problem_analysis(mark='-1'):
     path='/home/amax/Desktop/ExpAdaptation'
 
     # parameters
@@ -761,46 +761,10 @@ def run_exp_racos_for_synthetic_problem_analysis():
         log_buffer.append('--------------------------------------------------')
         log_buffer.append('optimization result: ' + str(opt_mean) + '#' + str(opt_std))
 
-    opt_error_list = []
 
-    for i in range(opt_repeat):
-        print('optimize ', i, '===================================================')
-        log_buffer.append('optimize ' + str(i) + '===================================================')
-
-        exp_racos = ExpRacosOptimization(dimension, net_ensemble)
-
-        start_t = time.time()
-        exp_racos.exp_mix_opt(obj_fct=prob_fct, ss=sample_size, bud=budget, pn=positive_num,
-                              rp=rand_probability, ub=uncertain_bit, at=adv_threshold)
-        end_t = time.time()
-
-        print('total budget is ', budget)
-        log_buffer.append('total budget is ' + str(budget))
-
-        hour, minute, second = time_formulate(start_t, end_t)
-        print('spending time: ', hour, ':', minute, ':', second)
-        log_buffer.append('spending time: ' + str(hour) + '+' + str(minute) + '+' + str(second))
-
-        optimal = exp_racos.get_optimal()
-        opt_error = optimal.get_fitness()
-        optimal_x = optimal.get_features()
-
-        opt_error_list.append(opt_error)
-        print('validation optimal value: ', opt_error)
-        log_buffer.append('validation optimal value: ' + str(opt_error))
-        print('optimal x: ', optimal_x)
-        log_buffer.append('optimal nn structure: ' + list2string(optimal_x))
-
-    opt_mean = np.mean(np.array(opt_error_list))
-    relate_error_list.append([this_distance, opt_mean])
-    opt_std = np.std(np.array(opt_error_list))
-    print('--------------------------------------------------')
-    print('optimization result: ', opt_mean, '#', opt_std)
-    log_buffer.append('--------------------------------------------------')
-    log_buffer.append('optimization result: ' + str(opt_mean) + '#' + str(opt_std))
     result_path = path+'/Results/SyntheticProbs/' + problem_name + '/dimension' + str(dimension_size) + '/'
     relate_error_file = result_path + 'relate-error-' + problem_name + '-dim' + str(dimension_size) + '-bias'\
-                            + str(bias_region) + '.txt'
+                            + str(bias_region)+mark + '.txt'
     temp_buffer = []
     for i in range(len(relate_error_list)):
         relate, error = relate_error_list[i]
@@ -810,7 +774,7 @@ def run_exp_racos_for_synthetic_problem_analysis():
     fo.FileWriter(relate_error_file, temp_buffer, style='w')
 
     optimization_log_file = result_path + 'opt-log-' + problem_name + '-dim' + str(dimension_size) + '-bias'\
-                            + str(bias_region) + '.txt'
+                            + str(bias_region) +mark + '.txt'
     print('optimization logging: ', optimization_log_file)
     fo.FileWriter(optimization_log_file, log_buffer, style='w')
 
@@ -821,4 +785,5 @@ if __name__ == '__main__':
     # synthetic_problems_sample(5)
     # learning_data_construct()
     # learning_exp()
-    run_exp_racos_for_synthetic_problem_analysis()
+    for i in range(4):
+     run_exp_racos_for_synthetic_problem_analysis(str(i+1))

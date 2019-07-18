@@ -14,7 +14,7 @@ class Experts(object):
     def __init__(self, predictors=None, eta=0.9):
 
         self.predictors = predictors
-        self.weights = []
+        self.weights = [1 for _ in range(len(predictors))]
         self.eta = eta
 
         return
