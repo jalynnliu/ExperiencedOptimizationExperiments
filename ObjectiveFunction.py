@@ -192,6 +192,14 @@ class DistributedFunction:
             value += (x[i] - self.__bias[i]) * (x[i] - self.__bias[i])
         return value
 
+    def DisRosenbrock(self, x):
+        value = 0
+        for i in range(len(x) - 1):
+            xi = x[i] - self.__bias[i]
+            value += (1 - xi) * (1 - xi) + 100 * (x[i + 1] - self.__bias[i] - xi * xi) * (
+                        x[i + 1] - xi * xi - self.__bias[i])
+        return value
+
 
 # read data from files and return data on numpy.array type
 def dataset_reader(train_file, test_file):

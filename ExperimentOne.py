@@ -22,6 +22,8 @@ import copy
 from Tools import string2list
 from ExpRacos import ExpRacosOptimization
 
+path = '/home/amax/Desktop/ExpAdaptation'
+
 def learning_instance_construct(pos_set=None, neg_set=None, new_set=None):
 
     instance_num = len(pos_set)
@@ -238,14 +240,14 @@ def synthetic_problems_sample(problem_size):
     rand_probability = 0.99  # the probability of sample in model
     uncertain_bits = 2  # the dimension size that is sampled randomly
 
-    start_index = 0
-    problem_name = 'sphere'
+    start_index = 1000
+    problem_name = 'ackley'
 
     repeat_num = 10
 
-    exp_path = './ExpLog/SyntheticProbsLog/'
+    exp_path = path + '/ExpLog/SyntheticProbsLog/'
 
-    bias_region = [-0.2, 0.2]
+    bias_region = [-0.5, 0.5]
 
     dimension_size = 10
 
@@ -339,7 +341,6 @@ def synthetic_problems_sample(problem_size):
 
         print('data logging: ', data_log_file)
         running_log.append('data log path: ' + data_log_file)
-        print(positive_set, negative_set, new_sample_set, label_set, data_log_file)
         save_log(positive_set, negative_set, new_sample_set, label_set, data_log_file)
 
         print('bias logging: ', bias_log_file)
@@ -354,17 +355,16 @@ def synthetic_problems_sample(problem_size):
 
 
 def learning_data_construct():
+    total_path = path + '/ExpLog/SyntheticProbsLog/'
 
-    total_path = './ExpLog/SyntheticProbsLog/'
-
-    problem_name = 'sphere'
+    problem_name = 'ackley'
     dimension_size = 10
-    bias_region = 0.2
-    start_index = 0
+    bias_region = 0.5
+    start_index = 1000
 
     is_balance = True
 
-    problem_num = 5
+    problem_num = 1000
 
     for prob_i in range(problem_num):
 
@@ -439,13 +439,13 @@ def learning_exp():
 
     # exp data parameters
     dim_size = 10
-    problem_name = 'sphere'
-    start_index = 0
+    problem_name = 'ackley'
+    start_index = 1000
     bias_region = 0.5
-    problem_num = 2000
+    problem_num = 1000
 
-    learner_path = './ExpLearner/SyntheticProbsLearner/'
-    data_path = './ExpLog/SyntheticProbsLog/'
+    learner_path = path + '/ExpLearner/SyntheticProbsLearner/'
+    data_path = path + '/ExpLog/SyntheticProbsLog/'
 
 
     for prob_i in range(problem_num):
@@ -636,7 +636,7 @@ def learning_exp():
     return
 
 def run_exp_racos_for_synthetic_problem_analysis(mark='-1'):
-    path='/home/amax/Desktop/ExpAdaptation'
+
 
     # parameters
     sample_size = 10            # the instance number of sampling in an iteration
@@ -649,7 +649,7 @@ def run_exp_racos_for_synthetic_problem_analysis(mark='-1'):
     opt_repeat = 10
 
     dimension_size = 10
-    problem_name = 'sphere'
+    problem_name = 'ackley'
     problem_num = 2000
     start_index = 0
     bias_region = 0.5
@@ -782,8 +782,8 @@ def run_exp_racos_for_synthetic_problem_analysis(mark='-1'):
 
 if __name__ == '__main__':
 
-    # synthetic_problems_sample(5)
-    # learning_data_construct()
-    # learning_exp()
-    for i in range(4):
-     run_exp_racos_for_synthetic_problem_analysis(str(i+1))
+    synthetic_problems_sample(1000)
+    learning_data_construct()
+    learning_exp()
+    for i in range(5):
+        run_exp_racos_for_synthetic_problem_analysis(str(i))

@@ -7,6 +7,7 @@ import torch
 from torch.autograd import Variable
 import math
 import copy
+import matplotlib.pyplot as plt
 
 
 class Experts(object):
@@ -14,7 +15,7 @@ class Experts(object):
     def __init__(self, predictors=None, eta=0.9):
 
         self.predictors = predictors
-        self.weights = [1 for _ in range(len(predictors))]
+        self.weights = [1 / len(predictors) for _ in range(len(predictors))]
         self.eta = eta
 
         return
@@ -51,10 +52,18 @@ class Experts(object):
         w_probs = np.array(outputs).T.dot(np.array(this_weights).T).tolist()
         return w_probs, outputs
 
-    def update_weights(self, predictions, label):
+    def update_weights(self, predictions, label, flag):
+        gamma = 1
+        beta = 0
+        eps = 0.0000000001
 
         for i in range(len(self.weights)):
             self.weights[i] = self.weights[i] * math.exp(-self.eta * self.loss_function(predictions[i], label))
+        self.weights = gamma * (self.weights - np.array(self.weights).mean(axis=0)) / np.sqrt(
+            np.array(self.weights).var(axis=0) + eps) + beta
+        if flag:
+            plt.plot(self.weights)
+            plt.show()
 
         return
 
@@ -508,6 +517,7 @@ class ExpAdaRacosOptimization:
 
         sample_count = 0
         all_dist_count = 0
+        flag = False
 
         # initialize sample set
         self.clear()
@@ -579,7 +589,9 @@ class ExpAdaRacosOptimization:
             else:
                 truth_label = 0
 
-            self.__expert.update_weights(np.array(prob_matrix)[:, max_index].T, truth_label)
+            if budget_c == self.__budget:
+                flag = True
+            self.__expert.update_weights(np.array(prob_matrix)[:, max_index].T, truth_label, flag)
 
             self.online_update(good_sample)
 
@@ -592,4 +604,5 @@ class ExpAdaRacosOptimization:
             self.update_optimal()
         # print 'average sample times of each sample:', float(sample_count) / self.__budget
         # print 'average shrink times of each sample:', float(all_dist_count) / sample_count
+
         return

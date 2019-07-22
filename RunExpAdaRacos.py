@@ -62,6 +62,7 @@ def get_predicotrs():
 
     predictors = []
     log_buffer = []
+    sort_q = []
 
     if True:
 
@@ -74,6 +75,9 @@ def get_predicotrs():
         learner_path = path+'/ExpLearner/SyntheticProbsLearner/' + problem_name + '/dimension' + str(dimension_size) \
                        + '/DirectionalModel/' + 'learner-' + problem_name + '-' + 'dim' + str(dimension_size) + '-' \
                        + 'bias' + str(bias_region) + '-'
+        bias_path = path + '/ExpLog/SyntheticProbsLog/' + problem_name + '/dimension' + str(dimension_size) \
+                    + '/RecordLog/' + 'bias-' + problem_name + '-' + 'dim' + str(dimension_size) + '-' \
+                    + 'bias' + str(bias_region) + '-'
 
         log_buffer.append('problem name: ' + str(problem_name))
         log_buffer.append('dimension size: ' + str(dimension_size))
@@ -85,11 +89,23 @@ def get_predicotrs():
         for learner_i in range(learner_num):
 
             learner_file = learner_path + str(start_index + learner_i) + '.pkl'
+            bias_file = bias_path + str(start_index + learner_i) + '.txt'
 
             this_learner = torch.load(learner_file)
             this_predictor = ExpContainer(prob_name=problem_name, prob_index=start_index + learner_i,
                                           predictor=this_learner)
             predictors.append(this_predictor)
+
+            biases = open(bias_file).readline()
+            biases = biases.split(',')[1].split(' ')
+            dist = 0
+            for bias in biases:
+                dist += abs(float(bias) - 0.1)
+            sort_q.append((learner_i, dist))
+        sort_q.sort(key=lambda a: a[1])
+        index = [x[0] for x in sort_q]
+        predictors = np.array(predictors)[index].tolist()
+
 
     return predictors, log_buffer
 
