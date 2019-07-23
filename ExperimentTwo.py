@@ -1330,5 +1330,5 @@ if __name__ == '__main__':
     # learning_data_construct()
     # learning_exp()
     # learning_exp_ensemble()
-    # run_exp_racos_for_synthetic_problem_analysis()
+    run_exp_racos_for_synthetic_problem_analysis()
     run_exp_racos_for_synthetic_problem_analysis_remix()

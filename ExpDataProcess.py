@@ -6,6 +6,7 @@ import FileOperator as fo
 from Tools import string2list
 import pickle
 
+path = '/home/amax/Desktop/ExpAdaptation'
 
 def learning_instance_construct(pos_set=None, neg_set=None, new_set=None):
 
@@ -102,17 +103,16 @@ def learning_instance_balance(tensors=None, labels=None):
 
 
 def learning_data_construct():
+    total_path = path + '/ExpLog/SyntheticProbsLog/'
 
-    total_path = './ExpLog/SyntheticProbsLog/'
-
-    problem_name = 'sphere'
+    problem_name = 'ackley'
     dimension_size = 10
-    bias_region = 0.2
-    start_index = 0
+    bias_region = 0.5
+    start_index = 1000
 
     is_balance = True
 
-    problem_num = 5
+    problem_num = 1000
 
     for prob_i in range(problem_num):
 
@@ -192,7 +192,7 @@ def learning_data_load(file_path=''):
 
 if __name__ == '__main__':
     learning_data_construct()
-    # file_path = './ExpLog/SyntheticProbsLog/ackley/dimension10/LearningData/learning-data-ackley-dim10-bias0.2-0.pkl'
+    # file_path = path+'/ExpLog/SyntheticProbsLog/ackley/dimension10/LearningData/learning-data-ackley-dim10-bias0.2-0.pkl'
     # learning_data_load(file_path=file_path)
 
 

@@ -1,4 +1,4 @@
-from ExpAdaRacos import ExpAdaRacosOptimization, Experts
+from ExpAdaRacos import ExpAdaRacosOptimization, Experts, ExpContainer
 import numpy as np
 from Components import Dimension
 from ObjectiveFunction import DistributedFunction
@@ -12,50 +12,12 @@ import torch.nn as nn
 import torch.nn.functional as F
 import torch.optim as optim
 import torch
+from ExpLearn import ImageNet
 
 path = '/home/amax/Desktop/ExpAdaptation'
 
-class ImageNet(nn.Module):
-
-    def __init__(self, middle_input_size=0, output_size=0):
-        super(ImageNet, self).__init__()
-
-        self.conv1 = nn.Conv2d(1, 4, 2)
-        self.conv2 = nn.Conv2d(4, 8, 2)
-        self.pool1 = nn.MaxPool2d(2, 1)
-        self.pool2 = nn.MaxPool2d(1, 2)
-        self.fc1 = nn.Linear(128 + middle_input_size , 256)
-        # self.dropout_linear1 = nn.Dropout2d(p=drop)
-        self.fc2 = nn.Linear(256, 64)
-        # self.dropout_linear2 = nn.Dropout2d(p=drop)
-        self.fc3 = nn.Linear(64, output_size)
-        # self.dropout_linear3 = nn.Dropout2d(p=drop)
-
-    def forward(self, x):
-        x2 = x[:, 0, x.size(2) - 1, :]
-        x1 = x[:, :, 0:x.size(2) - 1, :]
-        x1=F.relu(self.conv1(x1))
-        x1 = self.pool1(x1)
-        x1 = self.pool2(F.relu(self.conv2(x1)))
-
-        x1 = x1.view(-1, x1.size(1) * x1.size(2) * x1.size(3))
-        x = torch.cat((x1, x2), -1)
-
-        x = F.relu(self.fc1(x))
-        x = F.relu(self.fc2(x))
-        x = F.sigmoid(self.fc3(x))
-
-        return x
 
 
-class ExpContainer(object):
-
-    def __init__(self, prob_name='', prob_index=0, predictor=None, dist=0):
-        self.prob_name = prob_name
-        self.prob_index = prob_index
-        self.predictor = predictor
-        self.dist = dist
-        return
 
 
 # loading predictors

@@ -16,7 +16,7 @@ class Experts(object):
     def __init__(self, predictors=None, eta=0.9):
 
         self.predictors = predictors
-        self.weights = [step / len(predictors) for _ in range(int(len(predictors) / step))]  #
+        self.weights = []
         self.eta = eta
 
         return
@@ -79,8 +79,22 @@ class Experts(object):
     def loss_function(self, prediction, label):
         return (label - prediction) * (label - prediction)
 
+    def reset_weight(self):
+        self.weights = [step / len(self.predictors) for _ in range(int(len(self.predictors) / step))]
+        return
+
     def delete_predictors(self):
 
+        return
+
+
+class ExpContainer(object):
+
+    def __init__(self, prob_name='', prob_index=0, predictor=None, dist=0):
+        self.prob_name = prob_name
+        self.prob_index = prob_index
+        self.predictor = predictor
+        self.dist = dist
         return
 
 
@@ -195,6 +209,7 @@ class ExpAdaRacosOptimization:
         self.__pop = []
         self.__pos_pop = []
         self.__optimal = None
+        self.__expert.reset_weight()
         return
 
     # parameters setting

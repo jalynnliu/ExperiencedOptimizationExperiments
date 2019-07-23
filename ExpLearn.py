@@ -17,6 +17,7 @@ from sklearn.metrics import accuracy_score
 from Run_Racos import time_formulate
 from ExpDataProcess import learning_data_load
 
+path = '/home/amax/Desktop/ExpAdaptation'
 
 class ImageNet(nn.Module):
 
@@ -186,7 +187,7 @@ def train_image_net():
 
     exp_up_name = 'mnist_svhn'
     exp_name = 'mnist_svhn2'
-    total_path = './' + exp_up_name + '_exp/' + exp_name + '/'
+    total_path = path + '/' + exp_up_name + '_exp/' + exp_name + '/'
 
     save_name = ''
     log_name = exp_name + '_lr' + str(learn_rate) + '_epoch' + str(epoch_size) + '_net_running_log.txt'
@@ -377,7 +378,7 @@ def train_complex_image_net():
 
     exp_up_name = 'mnist'
     exp_name = 'complex_mnist'
-    total_path = './' + exp_up_name + '_exp/' + exp_name + '/'
+    total_path = path + '/' + exp_up_name + '_exp/' + exp_name + '/'
 
     save_name = ''
     log_name = exp_name + '_lr' + str(learn_rate) + '_epoch' + str(epoch_size) + '_net_running_log.txt'
@@ -566,13 +567,13 @@ def learning_exp():
 
     # exp data parameters
     dim_size = 10
-    problem_name = 'sphere'
-    start_index = 0
-    bias_region = 0.2
-    problem_num = 5
+    problem_name = 'ackley'
+    start_index = 1000
+    bias_region = 0.5
+    problem_num = 1000
 
-    learner_path = './ExpLearner/SyntheticProbsLearner/'
-    data_path = './ExpLog/SyntheticProbsLog/'
+    learner_path = path + '/ExpLearner/SyntheticProbsLearner/'
+    data_path = path + '/ExpLog/SyntheticProbsLog/'
 
     for prob_i in range(problem_num):
 

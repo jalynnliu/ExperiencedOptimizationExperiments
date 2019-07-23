@@ -23,6 +23,28 @@ from Tools import string2list
 from ExpRacos import ExpRacosOptimization
 
 path = '/home/amax/Desktop/ExpAdaptation'
+sample_size = 10  # the instance number of sampling in an iteration
+budget = 500  # budget in online style
+positive_num = 2  # the set size of PosPop
+rand_probability = 0.99  # the probability of sample in model
+uncertain_bits = 2  # the dimension size that is sampled randomly
+
+start_index = 0
+problem_name = 'rosenbrock'
+problem_num = 1000
+
+repeat_num = 10
+
+exp_path = path + '/ExpLog/SyntheticProbsLog/'
+
+bias_region = [-0.5, 0.5]
+
+dimension_size = 10
+
+dimension = Dimension()
+dimension.set_dimension_size(dimension_size)
+dimension.set_regions([[-1.0, 1.0] for _ in range(dimension_size)], [0 for _ in range(dimension_size)])
+
 
 def learning_instance_construct(pos_set=None, neg_set=None, new_set=None):
 
@@ -163,20 +185,6 @@ def save_log(pos_set, neg_set, new_set, label_set, file_name):
     return
 
 
-# load experience log
-def read_log(file_name):
-    f = open(file_name, 'rb')
-    pos_set = pickle.load(f)
-    neg_set = pickle.load(f)
-    new_set = pickle.load(f)
-    label_set = pickle.load(f)
-    f.close()
-
-    return pos_set, neg_set, new_set, label_set
-
-
-
-
 def split_data(data, batch_size=32, validation_rate=0.1):
     data, label = data
 
@@ -233,29 +241,8 @@ def learning_data_transfer(instance_set=None):
 
 
 # experience sample
-def synthetic_problems_sample(problem_size):
-    sample_size = 10  # the instance number of sampling in an iteration
-    budget = 500  # budget in online style
-    positive_num = 2  # the set size of PosPop
-    rand_probability = 0.99  # the probability of sample in model
-    uncertain_bits = 2  # the dimension size that is sampled randomly
-
-    start_index = 1000
-    problem_name = 'ackley'
-
-    repeat_num = 10
-
-    exp_path = path + '/ExpLog/SyntheticProbsLog/'
-
-    bias_region = [-0.5, 0.5]
-
-    dimension_size = 10
-
-    dimension = Dimension()
-    dimension.set_dimension_size(dimension_size)
-    dimension.set_regions([[-1.0, 1.0] for _ in range(dimension_size)], [0 for _ in range(dimension_size)])
-
-    for prob_i in range(problem_size):
+def synthetic_problems_sample():
+    for prob_i in range(problem_num):
 
         # bias log format: 'index,bias_list: dim1 dim2 dim3...'
         bias_log = []
@@ -281,7 +268,7 @@ def synthetic_problems_sample(problem_size):
             prob = func.DisSphere
 
         # bias log
-        bias_log.append(str(prob_i) + ',' + list2string(func.getBias()))
+        bias_log.append(str(prob_i + start_index) + ',' + list2string(func.getBias()))
         print('function: ', problem_name, ', this bias: ', func.getBias())
         running_log.append('function: ' + problem_name + ', this bias: ' + list2string(func.getBias()))
 
@@ -356,15 +343,8 @@ def synthetic_problems_sample(problem_size):
 
 def learning_data_construct():
     total_path = path + '/ExpLog/SyntheticProbsLog/'
-
-    problem_name = 'ackley'
-    dimension_size = 10
-    bias_region = 0.5
-    start_index = 1000
-
     is_balance = True
 
-    problem_num = 1000
 
     for prob_i in range(problem_num):
 
@@ -401,9 +381,9 @@ def learning_data_construct():
         problem_index = int(this_string[0])
         problem_bias = string2list(this_string[1])
 
-        if problem_index != start_index + prob_i:
-            print('problem index error!')
-            exit(0)
+        # if problem_index != start_index + prob_i:
+        #     print('problem index error!')
+        #     exit(0)
 
         # learning data log
         # data format:
@@ -437,13 +417,6 @@ def learning_exp():
     categorical_size = 1
     validation_switch = True
 
-    # exp data parameters
-    dim_size = 10
-    problem_name = 'ackley'
-    start_index = 1000
-    bias_region = 0.5
-    problem_num = 1000
-
     learner_path = path + '/ExpLearner/SyntheticProbsLearner/'
     data_path = path + '/ExpLog/SyntheticProbsLog/'
 
@@ -459,17 +432,17 @@ def learning_exp():
         log_buffer.append('learning rate: ' + str(learn_rate))
         log_buffer.append('+++++++++++++++++++++++++++++++')
         log_buffer.append('experience data parameter')
-        log_buffer.append('dimension size: ' + str(dim_size))
+        log_buffer.append('dimension size: ' + str(dimension_size))
         log_buffer.append('problem name: ' + problem_name)
         log_buffer.append('problem index: ' + str(start_index + prob_i))
         log_buffer.append('+++++++++++++++++++++++++++++++')
 
-        log_name = learner_path + problem_name + '/dimension' + str(dim_size) + '/TrainingLog/' + 'learning-log-' \
-                   + problem_name + '-' + 'dim' + str(dim_size) + '-' + 'bias' + str(bias_region) \
+        log_name = learner_path + problem_name + '/dimension' + str(dimension_size) + '/TrainingLog/' + 'learning-log-' \
+                   + problem_name + '-' + 'dim' + str(dimension_size) + '-' + 'bias' + str(bias_region) \
                    + '-' + str(start_index + prob_i) + '.txt'
 
-        data_file = data_path + problem_name + '/dimension' + str(dim_size) + '/LearningData/' + 'learning-data-' \
-                    + problem_name + '-' + 'dim' + str(dim_size) + '-' + 'bias' + str(bias_region) + '-' \
+        data_file = data_path + problem_name + '/dimension' + str(dimension_size) + '/LearningData/' + 'learning-data-' \
+                    + problem_name + '-' + 'dim' + str(dimension_size) + '-' + 'bias' + str(bias_region) + '-' \
                     + str(start_index + prob_i) + '.pkl'
 
         print('data loading: ', data_file)
@@ -509,7 +482,7 @@ def learning_exp():
 
         net_start = time.time()
 
-        net = ImageNet(middle_input_size=dim_size, output_size=categorical_size)
+        net = ImageNet(middle_input_size=dimension_size, output_size=categorical_size)
         net.cuda()
         # criterion = nn.CrossEntropyLoss()
         criterion = nn.BCELoss()
@@ -623,8 +596,8 @@ def learning_exp():
         print('test net time: ', hour, ':', minute, ':', second)
         log_buffer.append('test net time: ' + str(hour) + ':' + str(minute) + ':' + str(second))
 
-        net_file = learner_path + problem_name + '/dimension' + str(dim_size) + '/DirectionalModel/' + 'learner-' \
-                   + problem_name + '-' + 'dim' + str(dim_size) + '-' + 'bias' + str(bias_region) \
+        net_file = learner_path + problem_name + '/dimension' + str(dimension_size) + '/DirectionalModel/' + 'learner-' \
+                   + problem_name + '-' + 'dim' + str(dimension_size) + '-' + 'bias' + str(bias_region) \
                    + '-' + str(start_index + prob_i) + '.pkl'
         print('net saving...')
         torch.save(net, net_file)
@@ -635,29 +608,17 @@ def learning_exp():
 
     return
 
-def run_exp_racos_for_synthetic_problem_analysis(mark='-1'):
+
+def run_exp_racos_for_synthetic_problem_analysis():
 
 
     # parameters
-    sample_size = 10            # the instance number of sampling in an iteration
-    budget = 50                # budget in online style
     positive_num = 2            # the set size of PosPop
     rand_probability = 0.99     # the probability of sample in model
     uncertain_bit = 1           # the dimension size that is sampled randomly
     adv_threshold = 10          # advance sample size
 
     opt_repeat = 10
-
-    dimension_size = 10
-    problem_name = 'ackley'
-    problem_num = 2000
-    start_index = 0
-    bias_region = 0.5
-
-    dimension = Dimension()
-    dimension.set_dimension_size(dimension_size)
-    dimension.set_regions([[-1.0, 1.0] for _ in range(dimension_size)], [0 for _ in range(dimension_size)])
-
     log_buffer = []
 
     # logging
@@ -763,8 +724,8 @@ def run_exp_racos_for_synthetic_problem_analysis(mark='-1'):
 
 
     result_path = path+'/Results/SyntheticProbs/' + problem_name + '/dimension' + str(dimension_size) + '/'
-    relate_error_file = result_path + 'relate-error-' + problem_name + '-dim' + str(dimension_size) + '-bias'\
-                            + str(bias_region)+mark + '.txt'
+    relate_error_file = result_path + 'relate-error-' + problem_name + '-dim' + str(dimension_size) + '-bias' \
+                        + str(bias_region) + '.txt'
     temp_buffer = []
     for i in range(len(relate_error_list)):
         relate, error = relate_error_list[i]
@@ -773,17 +734,15 @@ def run_exp_racos_for_synthetic_problem_analysis(mark='-1'):
     log_buffer.append('relate error logging: ' + relate_error_file)
     fo.FileWriter(relate_error_file, temp_buffer, style='w')
 
-    optimization_log_file = result_path + 'opt-log-' + problem_name + '-dim' + str(dimension_size) + '-bias'\
-                            + str(bias_region) +mark + '.txt'
+    optimization_log_file = result_path + 'opt-log-' + problem_name + '-dim' + str(dimension_size) + '-bias' \
+                            + str(bias_region) + '.txt'
     print('optimization logging: ', optimization_log_file)
     fo.FileWriter(optimization_log_file, log_buffer, style='w')
 
 
 
 if __name__ == '__main__':
-
-    synthetic_problems_sample(1000)
+    synthetic_problems_sample()
     learning_data_construct()
     learning_exp()
-    for i in range(5):
-        run_exp_racos_for_synthetic_problem_analysis(str(i))
+    # run_exp_racos_for_synthetic_problem_analysis()
