@@ -50,10 +50,11 @@ class ImageNet(nn.Module):
 
 class ExpContainer(object):
 
-    def __init__(self, prob_name='', prob_index=0, predictor=None):
+    def __init__(self, prob_name='', prob_index=0, predictor=None, dist=0):
         self.prob_name = prob_name
         self.prob_index = prob_index
         self.predictor = predictor
+        self.dist = dist
         return
 
 
@@ -91,16 +92,18 @@ def get_predicotrs():
             learner_file = learner_path + str(start_index + learner_i) + '.pkl'
             bias_file = bias_path + str(start_index + learner_i) + '.txt'
 
-            this_learner = torch.load(learner_file)
-            this_predictor = ExpContainer(prob_name=problem_name, prob_index=start_index + learner_i,
-                                          predictor=this_learner)
-            predictors.append(this_predictor)
-
             biases = open(bias_file).readline()
             biases = biases.split(',')[1].split(' ')
             dist = 0
             for bias in biases:
                 dist += abs(float(bias) - 0.1)
+
+            this_learner = torch.load(learner_file)
+            this_predictor = ExpContainer(prob_name=problem_name, prob_index=start_index + learner_i,
+                                          predictor=this_learner, dist=dist)
+            predictors.append(this_predictor)
+
+
             sort_q.append((learner_i, dist))
         sort_q.sort(key=lambda a: a[1])
         index = [x[0] for x in sort_q]

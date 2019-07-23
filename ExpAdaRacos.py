@@ -9,13 +9,14 @@ import math
 import copy
 import matplotlib.pyplot as plt
 
+step = 20
 
 class Experts(object):
 
     def __init__(self, predictors=None, eta=0.9):
 
         self.predictors = predictors
-        self.weights = [1 / len(predictors) for _ in range(len(predictors))]
+        self.weights = [step / len(predictors) for _ in range(int(len(predictors) / step))]  #
         self.eta = eta
 
         return
@@ -32,6 +33,7 @@ class Experts(object):
         # inputs = Variable(inputs)
 
         outputs = []
+        y = []
 
         for i in range(len(self.predictors)):
             # print i, ' predictor---'
@@ -41,7 +43,11 @@ class Experts(object):
             # print 'out numpy: ', output
             output = output.reshape(output.size).tolist()
             # print 'out list: ', output
-            outputs.append(output)
+
+            y.append(output)
+            if (i + 1) % step == 0:
+                outputs.append(np.mean(np.array(y), axis=0))
+                y = []
         # outputs = np.array(outputs)
         # print 'all out: ', outputs
         # outputs = np.mean(outputs, axis=0).tolist()
@@ -59,10 +65,13 @@ class Experts(object):
 
         for i in range(len(self.weights)):
             self.weights[i] = self.weights[i] * math.exp(-self.eta * self.loss_function(predictions[i], label))
-        self.weights = gamma * (self.weights - np.array(self.weights).mean(axis=0)) / np.sqrt(
-            np.array(self.weights).var(axis=0) + eps) + beta
+
+        x = np.array(self.weights)
+        # self.weights-=min(x)
+        self.weights /= x.sum()
+        self.weights = self.weights.tolist()
         if flag:
-            plt.plot(self.weights)
+            plt.scatter(range(len(self.weights)), self.weights)
             plt.show()
 
         return
@@ -589,9 +598,10 @@ class ExpAdaRacosOptimization:
             else:
                 truth_label = 0
 
-            if budget_c == self.__budget:
+            if budget_c == self.__budget or budget_c % 10 == 0:
                 flag = True
-            self.__expert.update_weights(np.array(prob_matrix)[:, max_index].T, truth_label, flag)
+            self.__expert.update_weights(np.array(prob_matrix)[:, max_index].T, truth_label, flag=False)
+            flag = False
 
             self.online_update(good_sample)
 
