@@ -226,7 +226,7 @@ def synthetic_problems_sample(problem_size, problem_name):
 
     repeat_num = 10
 
-    exp_path = './ExpLog/SyntheticProbsLog/'
+    exp_path = path + '/ExpLog/SyntheticProbsLog/'
 
     bias_region = [-0.5, 0.5]
 
@@ -336,7 +336,7 @@ def synthetic_problems_sample(problem_size, problem_name):
 
 
 def learning_data_construct():
-    total_path = './ExpLog/SyntheticProbsLog/'
+    total_path = path + '/ExpLog/SyntheticProbsLog/'
 
     problem_name = 'ackley'
     dimension_size = 10
@@ -426,8 +426,8 @@ def learning_exp():
     bias_region = 0.5
     problem_num = 1000
 
-    learner_path = './ExpLearner/SyntheticProbsLearner/'
-    data_path = './ExpLog/SyntheticProbsLog/'
+    learner_path = path + '/ExpLearner/SyntheticProbsLearner/'
+    data_path = path + '/ExpLog/SyntheticProbsLog/'
 
     for prob_i in range(problem_num):
 
@@ -635,8 +635,8 @@ def learning_exp_ensemble():
     bias_region = 0.5
     problem_num = 2000
 
-    learner_path = './ExpLearner/SyntheticProbsLearner/'
-    data_path = './ExpLog/SyntheticProbsLog/'
+    learner_path = path + '/ExpLearner/SyntheticProbsLearner/'
+    data_path = path + '/ExpLog/SyntheticProbsLog/'
 
     log_buffer = []
     log_buffer.append('+++++++++++++++++++++++++++++++')
@@ -797,7 +797,7 @@ def learning_exp_ensemble():
 def run_exp_racos_for_synthetic_problem_analysis():
     # parameters
     sample_size = 10  # the instance number of sampling in an iteration
-    budget = 500  # budget in online style
+    budget = 50  # budget in online style
     positive_num = 2  # the set size of PosPop
     rand_probability = 0.99  # the probability of sample in model
     uncertain_bit = 1  # the dimension size that is sampled randomly
@@ -806,8 +806,8 @@ def run_exp_racos_for_synthetic_problem_analysis():
     opt_repeat = 10
 
     dimension_size = 10
-    problem_name = 'sphere'
-    problem_num = 2001
+    problem_name = 'ackley'
+    problem_num = 2000
     start_index = 0
     bias_region = 0.5
 
@@ -818,10 +818,10 @@ def run_exp_racos_for_synthetic_problem_analysis():
     log_buffer = []
 
     # logging
-    learner_path = './ExpLearner/SyntheticProbsLearner/' + problem_name + '/dimension' + str(dimension_size) \
+    learner_path = path + '/ExpLearner/SyntheticProbsLearner/' + problem_name + '/dimension' + str(dimension_size) \
                    + '/DirectionalModel/' + 'learner-' + problem_name + '-' + 'dim' + str(dimension_size) + '-' \
                    + 'bias' + str(bias_region) + '-'
-    problem_path = './ExpLog/SyntheticProbsLog/' + problem_name + '/dimension' + str(dimension_size) \
+    problem_path = path + '/ExpLog/SyntheticProbsLog/' + problem_name + '/dimension' + str(dimension_size) \
                    + '/RecordLog/' + 'bias-' + problem_name + '-' + 'dim' + str(dimension_size) + '-' \
                    + 'bias' + str(bias_region) + '-'
 
@@ -838,9 +838,6 @@ def run_exp_racos_for_synthetic_problem_analysis():
     net_ensemble = []
 
     for prob_i in range(problem_num):
-        if prob_i > 999:
-            problem_name = 'ackley'
-            start_index = -1000
 
         print(start_index + prob_i, '++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++')
         log_buffer.append(str(start_index + prob_i) + '++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++')
@@ -919,7 +916,8 @@ def run_exp_racos_for_synthetic_problem_analysis():
         log_buffer.append('--------------------------------------------------')
         log_buffer.append('optimization result: ' + str(opt_mean) + '#' + str(opt_std))
 
-    result_path = './Results/SyntheticProbs/ExperimentTwo/' + problem_name + '/dimension' + str(dimension_size) + '/'
+    result_path = path + '/Results/SyntheticProbs/ExperimentTwo/' + problem_name + '/dimension' + str(
+        dimension_size) + '/'
     relate_error_file = result_path + 'relate-error-' + problem_name + '-dim' + str(dimension_size) + '-bias' \
                         + str(bias_region) + '.txt'
     temp_buffer = []
@@ -949,7 +947,7 @@ def run_exp_racos_for_synthetic_problem_analysis_ensemble():
     opt_repeat = 10
 
     dimension_size = 10
-    problem_name = 'sphere'
+    problem_name = 'ackley'
     problem_num = 2000
     start_index = 0
     bias_region = 0.5
@@ -1331,4 +1329,4 @@ if __name__ == '__main__':
     # learning_exp()
     # learning_exp_ensemble()
     run_exp_racos_for_synthetic_problem_analysis()
-    run_exp_racos_for_synthetic_problem_analysis_remix()
+    # run_exp_racos_for_synthetic_problem_analysis_remix()
