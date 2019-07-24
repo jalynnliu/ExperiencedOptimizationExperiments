@@ -515,7 +515,7 @@ def learning_exp():
 
                 # print statistics
                 running_loss += loss.item()
-                if i % 50 == 49:  # print every 2000 mini-batches
+                if i % 2000 == 1999 or i == len(trainloader) - 1:  # print every 2000 mini-batches
                     print('[%d, %5d] loss: %.3f' % (epoch + 1, i + 1, running_loss / 50))
                     log_buffer.append('[%d, %5d] loss: %.3f' % (epoch + 1, i + 1, running_loss / 50))
                     running_loss = 0.0
@@ -610,7 +610,6 @@ def learning_exp():
 
 
 def run_exp_racos_for_synthetic_problem_analysis():
-
 
     # parameters
     positive_num = 2            # the set size of PosPop

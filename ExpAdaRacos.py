@@ -11,6 +11,7 @@ import matplotlib.pyplot as plt
 
 step = 20
 
+
 class Experts(object):
 
     def __init__(self, predictors=None, eta=0.9):
@@ -18,6 +19,7 @@ class Experts(object):
         self.predictors = predictors
         self.weights = []
         self.eta = eta
+        self.pic_count = 0
 
         return
 
@@ -70,9 +72,10 @@ class Experts(object):
         # self.weights-=min(x)
         self.weights /= x.sum()
         self.weights = self.weights.tolist()
-        if flag:
+        if (flag and self.pic_count < 6) or self.pic_count == 0:
             plt.scatter(range(len(self.weights)), self.weights)
             plt.show()
+            self.pic_count += 1
 
         return
 
@@ -88,37 +91,29 @@ class Experts(object):
         return
 
 
-class ExpContainer(object):
-
-    def __init__(self, prob_name='', prob_index=0, predictor=None, dist=0):
-        self.prob_name = prob_name
-        self.prob_index = prob_index
-        self.predictor = predictor
-        self.dist = dist
-        return
 
 
 class ExpAdaRacosOptimization:
 
     def __init__(self, dimension, expert):
 
-        self.__pop = []                     # population set
-        self.__pos_pop = []                 # positive sample set
-        self.__optimal = None               # the best sample so far
-        self.__region = []                  # the region of model
-        self.__label = []                   # the random label, if true random in this dimension
-        self.__sample_size = 0              # the instance size of sampling in an iteration
-        self.__budget = 0                   # budget of evaluation
-        self.__positive_num = 0             # positive sample set size
-        self.__rand_probability = 0.0       # the probability of sampling in model
-        self.__uncertain_bit = 0            # the dimension size of sampling randomly
+        self.__pop = []  # population set
+        self.__pos_pop = []  # positive sample set
+        self.__optimal = None  # the best sample so far
+        self.__region = []  # the region of model
+        self.__label = []  # the random label, if true random in this dimension
+        self.__sample_size = 0  # the instance size of sampling in an iteration
+        self.__budget = 0  # budget of evaluation
+        self.__positive_num = 0  # positive sample set size
+        self.__rand_probability = 0.0  # the probability of sampling in model
+        self.__uncertain_bit = 0  # the dimension size of sampling randomly
         self.__dimension = dimension
 
         # sampling saving
-        self.__model_ins = []               # positive sample used to modeling
-        self.__negative_set = []            # negative set used to modeling
-        self.__new_ins = []                 # new sample
-        self.__sample_label = []            # the label of each sample
+        self.__model_ins = []  # positive sample used to modeling
+        self.__negative_set = []  # negative set used to modeling
+        self.__new_ins = []  # new sample
+        self.__sample_label = []  # the label of each sample
 
         self.__expert = expert
         self.__adv_threshold = 0
@@ -284,7 +279,7 @@ class ExpAdaRacosOptimization:
             self.__sample_results.append(ins.get_fitness())
             temp.append(ins)
 
-        # sorted by fitness
+            # sorted by fitness
             temp.sort(key=lambda instance: instance.get_fitness())
 
         # initialize pos_pop
@@ -306,7 +301,8 @@ class ExpAdaRacosOptimization:
             j = 0
             while j < self.__dimension.get_size():
                 if self.__dimension.get_type(j) == 0 or self.__dimension.get_type(j) == 1:
-                    if neg_set[i].get_feature(j) < self.__region[j][0] or neg_set[i].get_feature(j) > self.__region[j][1]:
+                    if neg_set[i].get_feature(j) < self.__region[j][0] or neg_set[i].get_feature(j) > self.__region[j][
+                        1]:
                         break
                 else:
                     if self.__label[j] is False and exa.get_feature(j) != neg_set[i].get_feature(j):
@@ -394,8 +390,8 @@ class ExpAdaRacosOptimization:
 
             dist_count += 1
 
-            temp_dim = non_chosen_dim[self.__ro.get_uniform_integer(0, len(non_chosen_dim)-1)]
-            chosen_neg = self.__ro.get_uniform_integer(0, len(remain_neg)-1)
+            temp_dim = non_chosen_dim[self.__ro.get_uniform_integer(0, len(non_chosen_dim) - 1)]
+            chosen_neg = self.__ro.get_uniform_integer(0, len(remain_neg) - 1)
             # float dimension shrink
             if self.__dimension.get_type(temp_dim) == 0:
                 if exa.get_feature(temp_dim) < neg_set[remain_neg[chosen_neg]].get_feature(temp_dim):
@@ -419,11 +415,11 @@ class ExpAdaRacosOptimization:
             elif self.__dimension.get_type(temp_dim) == 1:
                 if exa.get_feature(temp_dim) < neg_set[remain_neg[chosen_neg]].get_feature(temp_dim):
                     temp_v = self.__ro.get_uniform_integer(exa.get_feature(temp_dim),
-                                                           neg_set[remain_neg[chosen_neg]].get_feature(temp_dim)-1)
+                                                           neg_set[remain_neg[chosen_neg]].get_feature(temp_dim) - 1)
                     if temp_v < self.__region[temp_dim][1]:
                         self.__region[temp_dim][1] = temp_v
                 else:
-                    temp_v = self.__ro.get_uniform_integer(neg_set[remain_neg[chosen_neg]].get_feature(temp_dim)-1,
+                    temp_v = self.__ro.get_uniform_integer(neg_set[remain_neg[chosen_neg]].get_feature(temp_dim) - 1,
                                                            exa.get_feature(temp_dim))
                     if temp_v > self.__region[temp_dim][0]:
                         self.__region[temp_dim][0] = temp_v
@@ -434,7 +430,7 @@ class ExpAdaRacosOptimization:
                 r_i = 0
                 while r_i < len(remain_neg):
                     if neg_set[remain_neg[r_i]].get_feature(temp_dim) < self.__region[temp_dim][0] or \
-                                    neg_set[remain_neg[r_i]].get_feature(temp_dim) > self.__region[temp_dim][1]:
+                            neg_set[remain_neg[r_i]].get_feature(temp_dim) > self.__region[temp_dim][1]:
                         remain_neg.remove(remain_neg[r_i])
                     else:
                         r_i += 1
@@ -451,7 +447,7 @@ class ExpAdaRacosOptimization:
                         r_i += 1
 
         while len(non_chosen_dim) > self.__uncertain_bit:
-            temp_dim = non_chosen_dim[self.__ro.get_uniform_integer(0, len(non_chosen_dim)-1)]
+            temp_dim = non_chosen_dim[self.__ro.get_uniform_integer(0, len(non_chosen_dim) - 1)]
             chosen_dim.append(temp_dim)
             non_chosen_dim.remove(temp_dim)
             self.__label[temp_dim] = False
@@ -469,7 +465,7 @@ class ExpAdaRacosOptimization:
                 new_sam.append(new_ins.get_features()[i])
             sorted_neg = sorted(self.__pop, key=lambda instance: instance.get_fitness())
             for i in range(self.__sample_size):
-                trajectory.append((np.array(sorted_neg[i].get_features())-np.array(array_best)).tolist())
+                trajectory.append((np.array(sorted_neg[i].get_features()) - np.array(array_best)).tolist())
             trajectory.append(new_sam)
             trajectory = [trajectory]
         return trajectory
@@ -615,7 +611,7 @@ class ExpAdaRacosOptimization:
 
             if budget_c == self.__budget or budget_c % 10 == 0:
                 flag = True
-            self.__expert.update_weights(np.array(prob_matrix)[:, max_index].T, truth_label, flag=False)
+            self.__expert.update_weights(np.array(prob_matrix)[:, max_index].T, truth_label, flag)
             flag = False
 
             self.online_update(good_sample)

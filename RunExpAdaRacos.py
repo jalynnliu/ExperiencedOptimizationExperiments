@@ -1,4 +1,4 @@
-from ExpAdaRacos import ExpAdaRacosOptimization, Experts, ExpContainer
+from ExpAdaRacos import ExpAdaRacosOptimization, Experts
 import numpy as np
 from Components import Dimension
 from ObjectiveFunction import DistributedFunction
@@ -17,7 +17,14 @@ from ExpLearn import ImageNet
 path = '/home/amax/Desktop/ExpAdaptation'
 
 
+class ExpContainer(object):
 
+    def __init__(self, prob_name='', prob_index=0, predictor=None, dist=0):
+        self.prob_name = prob_name
+        self.prob_index = prob_index
+        self.predictor = predictor
+        self.dist = dist
+        return
 
 
 # loading predictors

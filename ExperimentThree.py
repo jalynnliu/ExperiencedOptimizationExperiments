@@ -1,4 +1,4 @@
-from ExpAdaRacos import ExpAdaRacosOptimization, Experts, ExpContainer
+from ExpAdaRacos import ExpAdaRacosOptimization, Experts
 import numpy as np
 from Components import Dimension
 from ObjectiveFunction import DistributedFunction
@@ -34,6 +34,15 @@ eta = 0.9
 
 log_buffer = []
 
+
+class ExpContainer(object):
+
+    def __init__(self, prob_name='', prob_index=0, predictor=None, dist=0):
+        self.prob_name = prob_name
+        self.prob_index = prob_index
+        self.predictor = predictor
+        self.dist = dist
+        return
 
 # loading predictors
 def get_predicotrs():
@@ -73,6 +82,7 @@ def get_predicotrs():
         sort_q.sort(key=lambda a: a[1])
         index = [x[0] for x in sort_q]
         predictors = np.array(predictors)[index].tolist()
+        nets = np.array(nets)[index].tolist()
 
         print('Learner files loaded!')
 
@@ -87,6 +97,7 @@ def run(type):
     print('+++++++++++++++++++++++++++++++')
     print('Running: ' + type)
     print('+++++++++++++++++++++++++++++++')
+    expert = Experts(predictors=predictors, eta=eta)
 
     for i in range(opt_repeat):
         print('optimize ', i, '===================================================')
@@ -97,7 +108,6 @@ def run(type):
             exp_racos.exp_mix_opt(obj_fct=prob_fct, ss=sample_size, bud=budget, pn=positive_num,
                                   rp=rand_probability, ub=uncertain_bit, at=adv_threshold)
         elif type == 'ada':
-            expert = Experts(predictors=predictors, eta=eta)
             exp_racos = ExpAdaRacosOptimization(dimension, expert)
             exp_racos.exp_ada_mix_opt(obj_fct=prob_fct, ss=sample_size, bud=budget, pn=positive_num,
                                       rp=rand_probability, ub=uncertain_bit, at=adv_threshold)
@@ -138,13 +148,12 @@ def run(type):
 
 
 def run_no_expert():
-    # parameters
-    list_budget = [100, 1000, 10000, 50000]
-
-    # dimension setting
-    float_region = [-100, 100]
-    integer_region = [-100, 100]
-    categorical_region = [0, 2]
+    log_buffer.append('+++++++++++++++++++++++++++++++')
+    log_buffer.append('Running: no experts, pure Racos')
+    log_buffer.append('+++++++++++++++++++++++++++++++')
+    print('+++++++++++++++++++++++++++++++')
+    print('Running: no experts, pure Racos')
+    print('+++++++++++++++++++++++++++++++')
 
     # optimization
     racos = RacosOptimization(dimension)
@@ -231,7 +240,7 @@ if __name__ == '__main__':
     print('optimization result for adaptive: ', opt_mean_ada, ', standard variance is: ', opt_std_ada)
     log_buffer.append(
         'optimization result for adaptive: ' + str(opt_mean_ada) + ', standard variance is: ' + str(opt_std_ada))
-    print('optimization result for all predictors average: ', opt_mean_ave, ', standard variance is: ', opt_std_ne)
+    print('optimization result for all predictors average: ', opt_mean_ave, ', standard variance is: ', opt_std_ave)
     log_buffer.append(
         'optimization result for all predictors average: ' + str(opt_mean_ave) + ', standard variance is: ' + str(
             opt_std_ave))
@@ -240,7 +249,7 @@ if __name__ == '__main__':
         'optimization result for no experts pure Racos: ' + str(opt_mean_ne) + ', standard variance is: ' + str(
             opt_std_ne))
 
-    result_path = path + '/Results/ExperimentThree/' + problem_name + '/dimension' + str(dimension_size) + '/'
+    result_path = path + '/Results/ExperimentThree/'
 
     optimization_log_file = result_path + 'opt-log-' + problem_name + '-with-' + str(
         learner_num) + learner_name + '.txt'
