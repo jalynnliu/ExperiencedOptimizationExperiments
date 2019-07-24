@@ -23,9 +23,9 @@ adv_threshold = 10  # advance sample size
 dimension_size = 10
 opt_repeat = 10
 
-problem_name = 'sphere'
+problem_name = 'ackley'
 bias_region = 0.5
-learner_name = 'sphere'
+learner_name = 'ackley'
 start_index = 0
 learner_num = 2000
 step = 100
@@ -97,7 +97,7 @@ def run(type):
     print('+++++++++++++++++++++++++++++++')
     print('Running: ' + type)
     print('+++++++++++++++++++++++++++++++')
-    expert = Experts(predictors=predictors, eta=eta)
+    expert = Experts(predictors=predictors, eta=eta, bg=budget)
 
     for i in range(opt_repeat):
         print('optimize ', i, '===================================================')
@@ -252,6 +252,6 @@ if __name__ == '__main__':
     result_path = path + '/Results/ExperimentThree/'
 
     optimization_log_file = result_path + 'opt-log-' + problem_name + '-with-' + str(
-        learner_num) + learner_name + '.txt'
+        learner_num) + learner_name + '-budget' + str(budget) + '.txt'
     print('optimization logging: ', optimization_log_file)
     fo.FileWriter(optimization_log_file, log_buffer, style='w')

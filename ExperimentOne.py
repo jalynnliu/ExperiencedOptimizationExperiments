@@ -29,15 +29,15 @@ positive_num = 2  # the set size of PosPop
 rand_probability = 0.99  # the probability of sample in model
 uncertain_bits = 2  # the dimension size that is sampled randomly
 
-start_index = 0
+start_index = 500
 problem_name = 'rosenbrock'
-problem_num = 1000
+problem_num = 1000 - start_index
 
 repeat_num = 10
 
 exp_path = path + '/ExpLog/SyntheticProbsLog/'
 
-bias_region = [-0.5, 0.5]
+bias_region = 0.5
 
 dimension_size = 10
 
@@ -261,7 +261,7 @@ def synthetic_problems_sample():
             problem_name + ': ' + str(start_index + prob_i) + ' ==============================================')
 
         # problem setting
-        func = DistributedFunction(dim=dimension, bias_region=bias_region)
+        func = DistributedFunction(dim=dimension, bias_region=[-bias_region, bias_region])
         if problem_name == 'ackley':
             prob = func.DisAckley
         else:
@@ -419,9 +419,9 @@ def learning_exp():
 
     learner_path = path + '/ExpLearner/SyntheticProbsLearner/'
     data_path = path + '/ExpLog/SyntheticProbsLog/'
+    print(problem_num)
 
-
-    for prob_i in range(problem_num):
+    for prob_i in range(problem_num - 1, 0, -1):
 
         log_buffer = []
         log_buffer.append('+++++++++++++++++++++++++++++++')
@@ -628,7 +628,7 @@ def run_exp_racos_for_synthetic_problem_analysis():
                    + '/RecordLog/' + 'bias-' + problem_name + '-' + 'dim' + str(dimension_size) + '-'\
                    + 'bias' + str(bias_region) + '-'
 
-    func = DistributedFunction(dimension, bias_region=[-0.5, 0.5])
+    func = DistributedFunction(dimension, bias_region=[-bias_region, bias_region])
     target_bias = [0.1 for _ in range(dimension_size)]
     func.setBias(target_bias)
 
@@ -741,7 +741,7 @@ def run_exp_racos_for_synthetic_problem_analysis():
 
 
 if __name__ == '__main__':
-    synthetic_problems_sample()
-    learning_data_construct()
+    # synthetic_problems_sample()
+    # learning_data_construct()
     learning_exp()
     # run_exp_racos_for_synthetic_problem_analysis()

@@ -9,17 +9,18 @@ import math
 import copy
 import matplotlib.pyplot as plt
 
-step = 20
+step = 100
 
 
 class Experts(object):
 
-    def __init__(self, predictors=None, eta=0.9):
+    def __init__(self, predictors=None, eta=0.9, bg=50):
 
         self.predictors = predictors
         self.weights = []
         self.eta = eta
         self.pic_count = 0
+        self.bg = bg
 
         return
 
@@ -72,10 +73,11 @@ class Experts(object):
         # self.weights-=min(x)
         self.weights /= x.sum()
         self.weights = self.weights.tolist()
-        if (flag and self.pic_count < 6) or self.pic_count == 0:
+        if (flag and self.pic_count < (self.bg / 10 + 1)) or self.pic_count == 0:
             plt.scatter(range(len(self.weights)), self.weights)
             plt.show()
             self.pic_count += 1
+            print(self.weights)
 
         return
 
