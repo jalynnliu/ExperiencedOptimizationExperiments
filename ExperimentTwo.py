@@ -806,8 +806,8 @@ def run_exp_racos_for_synthetic_problem_analysis():
     opt_repeat = 10
 
     dimension_size = 10
-    problem_name = 'ackley'
-    problem_num = 2000
+    problem_name = 'rosenbrock'
+    problem_num = 1000
     start_index = 0
     bias_region = 0.5
 
@@ -831,8 +831,13 @@ def run_exp_racos_for_synthetic_problem_analysis():
 
     if problem_name == 'ackley':
         prob_fct = func.DisAckley
-    else:
+    elif problem_name == 'sphere':
         prob_fct = func.DisSphere
+    elif problem_name == 'rosenbrock':
+        prob_fct = func.DisRosenbrock
+    else:
+        print('Wrong Function!')
+        exit()
 
     relate_error_list = []
     net_ensemble = []
@@ -916,7 +921,7 @@ def run_exp_racos_for_synthetic_problem_analysis():
         log_buffer.append('--------------------------------------------------')
         log_buffer.append('optimization result: ' + str(opt_mean) + '#' + str(opt_std))
 
-    result_path = path + '/Results/SyntheticProbs/ExperimentTwo/' + problem_name + '/dimension' + str(
+    result_path = path + '/Results/SyntheticProbs/' + problem_name + '/dimension' + str(
         dimension_size) + '/'
     relate_error_file = result_path + 'relate-error-' + problem_name + '-dim' + str(dimension_size) + '-bias' \
                         + str(bias_region) + '.txt'

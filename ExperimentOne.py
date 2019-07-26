@@ -29,13 +29,13 @@ positive_num = 2  # the set size of PosPop
 rand_probability = 0.99  # the probability of sample in model
 uncertain_bits = 2  # the dimension size that is sampled randomly
 
-start_index = 500
-problem_name = 'rosenbrock'
-problem_num = 1000 - start_index
+start_index = 0
+problem_name = 'ackley'
+problem_num = 2000 - start_index
 
 repeat_num = 10
 
-exp_path = path + '/ExpLog/SyntheticProbsLog/'
+exp_path = path + '/ExpLog/SyntheticProbsLog/ackley_resample/'
 
 bias_region = 0.5
 
@@ -263,9 +263,14 @@ def synthetic_problems_sample():
         # problem setting
         func = DistributedFunction(dim=dimension, bias_region=[-bias_region, bias_region])
         if problem_name == 'ackley':
-            prob = func.DisAckley
+            prob_fct = func.DisAckley
+        elif problem_name == 'sphere':
+            prob_fct = func.DisSphere
+        elif problem_name == 'rosenbrock':
+            prob_fct = func.DisRosenbrock
         else:
-            prob = func.DisSphere
+            print('Wrong Function!')
+            exit()
 
         # bias log
         bias_log.append(str(prob_i + start_index) + ',' + list2string(func.getBias()))
@@ -286,7 +291,7 @@ def synthetic_problems_sample():
 
             # optimization process
             start_t = time.time()
-            optimizer.mix_opt(obj_fct=prob, ss=sample_size, bud=budget, pn=positive_num, rp=rand_probability,
+            optimizer.mix_opt(obj_fct=prob_fct, ss=sample_size, bud=budget, pn=positive_num, rp=rand_probability,
                               ub=uncertain_bits)
             end_t = time.time()
             hour, minute, second = time_formulate(start_t, end_t)
@@ -318,13 +323,13 @@ def synthetic_problems_sample():
 
         data_log_file = exp_path + str(problem_name) + '/dimension' + str(dimension_size) + '/DataLog/' + \
                         'data-' + problem_name + '-' + 'dim' + str(dimension_size) + '-' + 'bias' \
-                        + str(bias_region[1]) + '-' + str(start_index + prob_i) + '.pkl'
+                        + str(bias_region) + '-' + str(start_index + prob_i) + '.pkl'
         bias_log_file = exp_path + str(problem_name) + '/dimension' + str(dimension_size) + '/RecordLog/' + 'bias-' \
-                        + problem_name + '-' + 'dim' + str(dimension_size) + '-' + 'bias' + str(bias_region[1]) \
+                        + problem_name + '-' + 'dim' + str(dimension_size) + '-' + 'bias' + str(bias_region) \
                         + '-' + str(start_index + prob_i) + '.txt'
         running_log_file = exp_path + str(problem_name) + '/dimension' + str(dimension_size) + '/RecordLog/' + \
                            'running-' + problem_name + '-' + 'dim' + str(dimension_size) + '-' + 'bias' \
-                           + str(bias_region[1]) + '-' + str(start_index + prob_i) + '.txt'
+                           + str(bias_region) + '-' + str(start_index + prob_i) + '.txt'
 
         print('data logging: ', data_log_file)
         running_log.append('data log path: ' + data_log_file)
@@ -342,7 +347,7 @@ def synthetic_problems_sample():
 
 
 def learning_data_construct():
-    total_path = path + '/ExpLog/SyntheticProbsLog/'
+    total_path = path + '/ExpLog/SyntheticProbsLog/ackley_resample/'
     is_balance = True
 
 
@@ -417,11 +422,11 @@ def learning_exp():
     categorical_size = 1
     validation_switch = True
 
-    learner_path = path + '/ExpLearner/SyntheticProbsLearner/'
-    data_path = path + '/ExpLog/SyntheticProbsLog/'
+    learner_path = path + '/ExpLearner/SyntheticProbsLearner/ackley_resample/'
+    data_path = path + '/ExpLog/SyntheticProbsLog/ackley_resample/'
     print(problem_num)
 
-    for prob_i in range(problem_num - 1, 0, -1):
+    for prob_i in range(problem_num):
 
         log_buffer = []
         log_buffer.append('+++++++++++++++++++++++++++++++')
@@ -742,6 +747,6 @@ def run_exp_racos_for_synthetic_problem_analysis():
 
 if __name__ == '__main__':
     # synthetic_problems_sample()
-    # learning_data_construct()
+    learning_data_construct()
     learning_exp()
     # run_exp_racos_for_synthetic_problem_analysis()

@@ -6,8 +6,10 @@ path = '/home/amax/Desktop/ExpAdaptation'
 
 def meanScatter():
     a = []
-    for j in range(5):
-        f = open(path + '/Results/SyntheticProbs/sphere/dimension10/opt-log-sphere-dim10-bias0.5' + str(j) + '.txt')
+    problem_name = 'ackley'
+    for j in range(1):
+        f = open(
+            path + '/Results/SyntheticProbs/' + problem_name + '/dimension10/opt-log-' + problem_name + '-dim10-bias0.5.txt')
         for i in range(2000):
             line = f.readline()
             while line.split(' ')[0] != 'source':
@@ -73,4 +75,4 @@ def twoColor():
     plt.show()
 
 
-twoColor()
+meanScatter()
