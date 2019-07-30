@@ -21,7 +21,6 @@ class Experts(object):
         self.eta = eta
         self.pic_count = 0
         self.bg = bg
-
         return
 
     # prediction for each input
@@ -62,19 +61,21 @@ class Experts(object):
         return w_probs, outputs
 
     def update_weights(self, predictions, label, flag):
-        gamma = 1
-        beta = 0
-        eps = 0.0000000001
-
         for i in range(len(self.weights)):
             self.weights[i] = self.weights[i] * math.exp(-self.eta * self.loss_function(predictions[i], label))
 
         x = np.array(self.weights)
         # self.weights-=min(x)
         self.weights /= x.sum()
-        self.weights = self.weights.tolist()
-        if (flag and self.pic_count < (self.bg / 10 + 1)) or self.pic_count == 0:
-            plt.scatter(range(len(self.weights)), self.weights)
+        # self.weights = self.weights.tolist()
+        if (flag and self.pic_count < (self.bg / 10)) or self.pic_count == 0:
+            if True:
+                index = [i * 2 + 1 for i in range(int(len(self.weights) / 2))]
+                plt.scatter(range(len(self.weights[index])), self.weights[index], c='red')
+                plt.scatter(range(len(self.weights[[i * 2 for i in range(int(len(self.weights) / 2))]])),
+                            self.weights[[i * 2 for i in range(int(len(self.weights) / 2))]], c='blue')
+            else:
+                plt.scatter(range(len(self.weights)), self.weights)
             plt.show()
             self.pic_count += 1
             print(self.weights)
@@ -561,6 +562,7 @@ class ExpAdaRacosOptimization:
             if budget_c % 10 == 0:
                 # print '======================================================'
                 print('budget ', budget_c, ':', self.__optimal.get_fitness())
+                flag = True
                 # self.__optimal.show_instance()
             adv_samples = []
             adv_inputs = []
@@ -611,8 +613,6 @@ class ExpAdaRacosOptimization:
             else:
                 truth_label = 0
 
-            if budget_c == self.__budget or budget_c % 10 == 0:
-                flag = True
             self.__expert.update_weights(np.array(prob_matrix)[:, max_index].T, truth_label, flag)
             flag = False
 

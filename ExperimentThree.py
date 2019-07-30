@@ -12,6 +12,7 @@ import torch
 from Racos import RacosOptimization
 from ExpRacos import ExpRacosOptimization
 from ExpLearn import ImageNet
+import matplotlib.pyplot as plt
 
 path = '/home/amax/Desktop/ExpAdaptation'
 sample_size = 10  # the instance number of sampling in an iteration
@@ -23,9 +24,9 @@ adv_threshold = 10  # advance sample size
 dimension_size = 10
 opt_repeat = 10
 
-problem_name = 'ackley'
+problem_name = 'sphere'
 bias_region = 0.5
-learner_name = 'ackley'
+learner_name = 'sphere'
 start_index = 0
 learner_num = 2000
 step = 100
@@ -44,6 +45,84 @@ class ExpContainer(object):
         self.dist = dist
         return
 
+
+def get_mixed_predicotrs():
+    predictors = []
+
+    if True:
+        learner_name = 'sphere'
+        learner_num = 2000
+        sort_q = []
+
+        print('Loading learner files...')
+
+        for learner_i in range(learner_num):
+            learner_path = path + '/ExpLearner/SyntheticProbsLearner/' + learner_name + '/dimension' + str(
+                dimension_size) \
+                           + '/DirectionalModel/' + 'learner-' + learner_name + '-' + 'dim' + str(dimension_size) + '-' \
+                           + 'bias' + str(bias_region) + '-'
+            bias_path = path + '/ExpLog/SyntheticProbsLog/' + learner_name + '/dimension' + str(dimension_size) \
+                        + '/RecordLog/' + 'bias-' + learner_name + '-' + 'dim' + str(dimension_size) + '-' \
+                        + 'bias' + str(bias_region) + '-'
+
+            learner_file = learner_path + str(start_index + learner_i) + '.pkl'
+            bias_file = bias_path + str(start_index + learner_i) + '.txt'
+
+            biases = open(bias_file).readline()
+            biases = biases.split(',')[1].split(' ')
+            dist = 0
+            for bias in biases:
+                dist += abs(float(bias) - 0.1)
+
+            this_learner = torch.load(learner_file)
+            this_predictor = ExpContainer(prob_name=learner_name, prob_index=start_index + learner_i,
+                                          predictor=this_learner, dist=dist)
+
+            sort_q.append((learner_i, dist, this_predictor))
+        sort_q.sort(key=lambda a: a[1])
+        predictors += [x[2] for x in sort_q]
+
+        learner_name = 'rosenbrock'
+        sort_q = []
+        learner_num = 1000
+
+        for learner_i in range(learner_num):
+            learner_path = path + '/ExpLearner/SyntheticProbsLearner/' + learner_name + '/dimension' + str(
+                dimension_size) \
+                           + '/DirectionalModel/' + 'learner-' + learner_name + '-' + 'dim' + str(dimension_size) + '-' \
+                           + 'bias' + str(bias_region) + '-'
+            bias_path = path + '/ExpLog/SyntheticProbsLog/' + learner_name + '/dimension' + str(dimension_size) \
+                        + '/RecordLog/' + 'bias-' + learner_name + '-' + 'dim' + str(dimension_size) + '-' \
+                        + 'bias' + str(bias_region) + '-'
+
+            learner_file = learner_path + str(start_index + learner_i) + '.pkl'
+            bias_file = bias_path + str(start_index + learner_i) + '.txt'
+
+            biases = open(bias_file).readline()
+            biases = biases.split(',')[1].split(' ')
+            dist = 0
+            for bias in biases:
+                dist += abs(float(bias) - 0.1)
+
+            this_learner = torch.load(learner_file)
+            this_predictor = ExpContainer(prob_name=learner_name, prob_index=start_index + learner_i,
+                                          predictor=this_learner, dist=dist)
+            predictors.append(this_predictor)
+
+            sort_q.append((learner_i, dist, this_predictor))
+        sort_q.sort(key=lambda a: a[1])
+        predictors += [x[2] for x in sort_q]
+        predictor = []
+
+        for i in range(10):
+            predictor += predictors[i * 2 * step:i * 2 * step + step]
+            predictor += predictors[i * step + 2000:i * step + step + 2000]
+
+        print('Learner files loaded!')
+
+    return predictor, [x.predictor for x in predictor]
+
+
 # loading predictors
 def get_predicotrs():
     predictors = []
@@ -51,8 +130,8 @@ def get_predicotrs():
     nets = []
 
     if True:
-
-        learner_path = path + '/ExpLearner/SyntheticProbsLearner/' + learner_name + '/dimension' + str(dimension_size) \
+        learner_path = path + '/ExpLearner/SyntheticProbsLearner/' + learner_name + '/dimension' + str(
+            dimension_size) \
                        + '/DirectionalModel/' + 'learner-' + learner_name + '-' + 'dim' + str(dimension_size) + '-' \
                        + 'bias' + str(bias_region) + '-'
         bias_path = path + '/ExpLog/SyntheticProbsLog/' + learner_name + '/dimension' + str(dimension_size) \
@@ -62,6 +141,7 @@ def get_predicotrs():
         print('Loading learner files...')
 
         for learner_i in range(learner_num):
+
 
             learner_file = learner_path + str(start_index + learner_i) + '.pkl'
             bias_file = bias_path + str(start_index + learner_i) + '.txt'
@@ -97,7 +177,9 @@ def run(type):
     print('+++++++++++++++++++++++++++++++')
     print('Running: ' + type)
     print('+++++++++++++++++++++++++++++++')
-    expert = Experts(predictors=predictors, eta=eta, bg=budget)
+    if type == 'ada':
+        # pre=sorted(predictors,key=lambda a:a.dist)
+        expert = Experts(predictors=predictors, eta=eta, bg=budget)
 
     for i in range(opt_repeat):
         print('optimize ', i, '===================================================')
@@ -223,7 +305,7 @@ if __name__ == '__main__':
     log_buffer.append('bias: ' + list2string(target_bias))
     log_buffer.append('+++++++++++++++++++++++++++++++')
 
-    predictors, nets = get_predicotrs()
+    predictors, nets = get_mixed_predicotrs()
 
     opt_mean_gt, opt_std_gt = run('ground truth')
     opt_mean_ada, opt_std_ada = run('ada')
@@ -252,6 +334,7 @@ if __name__ == '__main__':
     result_path = path + '/Results/ExperimentThree/'
 
     optimization_log_file = result_path + 'opt-log-' + problem_name + '-with-' + str(
-        learner_num) + learner_name + '-budget' + str(budget) + '.txt'
+        learner_num) + learner_name + '-budget' + str(budget) + '-mixed.txt'
     print('optimization logging: ', optimization_log_file)
     fo.FileWriter(optimization_log_file, log_buffer, style='w')
+

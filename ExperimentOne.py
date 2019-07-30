@@ -16,128 +16,35 @@ from sklearn.metrics import recall_score
 from sklearn.metrics import precision_score
 from sklearn.metrics import accuracy_score
 from Run_Racos import time_formulate
-from ExpDataProcess import learning_data_load
-from SyntheticProbsSample import read_log
+from ExpDataProcess import learning_data_load, learning_instance_construct, learning_instance_balance
+from ExpLearn import learning_data_transfer, split_data, batch_split
+from SyntheticProbsSample import read_log, save_log
 import copy
 from Tools import string2list
 from ExpRacos import ExpRacosOptimization
 
-path = '/home/amax/Desktop/ExpAdaptation'
+path = '/data/ExpAdaptation'
 sample_size = 10  # the instance number of sampling in an iteration
 budget = 500  # budget in online style
 positive_num = 2  # the set size of PosPop
 rand_probability = 0.99  # the probability of sample in model
-uncertain_bits = 2  # the dimension size that is sampled randomly
+uncertain_bits = 20  # the dimension size that is sampled randomly
 
-start_index = 0
-problem_name = 'ackley'
+start_index = 511
+problem_name = 'sphere'
 problem_num = 2000 - start_index
 
 repeat_num = 10
 
-exp_path = path + '/ExpLog/SyntheticProbsLog/ackley_resample/'
+exp_path = path + '/ExpLog/SyntheticProbsLog/'
 
 bias_region = 0.5
 
-dimension_size = 10
+dimension_size = 100
 
 dimension = Dimension()
 dimension.set_dimension_size(dimension_size)
 dimension.set_regions([[-1.0, 1.0] for _ in range(dimension_size)], [0 for _ in range(dimension_size)])
-
-
-def learning_instance_construct(pos_set=None, neg_set=None, new_set=None):
-
-    instance_num = len(pos_set)
-
-    instance_set = []
-    for i in range(instance_num):
-
-        this_instance = []
-
-        # contrelization
-        this_pos = np.array(pos_set[i])
-        this_neg_set = neg_set[i]
-        for j in range(len(this_neg_set)):
-            this_neg = np.array(this_neg_set[j])
-            this_instance.append((this_neg - this_pos).tolist())
-
-        # add new sample
-        this_instance.append(new_set[i])
-
-        instance_set.append(this_instance)
-
-    return instance_set
-
-
-def learning_instance_balance(tensors=None, labels=None):
-
-    positive_tensors = []
-    negative_tensors = []
-
-    for i in range(len(tensors)):
-
-        if labels[i] == 1:
-            positive_tensors.append(tensors[i])
-        else:
-            negative_tensors.append(tensors[i])
-
-    print('original positive tensor size: ', len(positive_tensors))
-    print('original negative tensor size: ', len(negative_tensors))
-
-    print('balancing...')
-
-    if len(positive_tensors) < len(negative_tensors):
-        maj_tensor = negative_tensors
-        maj_label = 0
-        min_tensor = positive_tensors
-        min_label = 1
-
-    else:
-        maj_tensor = positive_tensors
-        maj_label = 1
-        min_tensor = negative_tensors
-        min_label = 0
-
-    less_size = len(maj_tensor) - len(min_tensor)
-
-    add_min_tensor = []
-
-    for i in range(less_size):
-        index_m = random.randint(0, len(min_tensor) - 1)
-        add_min_tensor.append(copy.deepcopy(min_tensor[index_m]))
-
-    min_tensor.extend(add_min_tensor)
-
-    print('mixing...')
-
-    i = 0
-    j = 0
-    all_tensor = []
-    all_label = []
-    while i < len(maj_tensor) and j < len(min_tensor):
-        choose = random.randint(0, 1)
-        if choose == 0:
-            all_tensor.append(maj_tensor[i])
-            all_label.append(maj_label)
-            i += 1
-        else:
-            all_tensor.append(min_tensor[j])
-            all_label.append(min_label)
-            j += 1
-    while i < len(maj_tensor):
-        all_tensor.append(maj_tensor[i])
-        all_label.append(maj_label)
-        i += 1
-    while j < len(min_tensor):
-        all_tensor.append(min_tensor[j])
-        all_label.append(min_label)
-        j += 1
-
-    print('positive tensor size: ', sum(all_label))
-    print('negative tensor size: ', len(all_tensor) - sum(all_label))
-
-    return all_tensor, all_label
 
 
 
@@ -145,12 +52,16 @@ class ImageNet(nn.Module):
 
     def __init__(self, middle_input_size=0, output_size=0):
         super(ImageNet, self).__init__()
-
-        self.conv1 = nn.Conv2d(1, 4, 2)
-        self.conv2 = nn.Conv2d(4, 8, 2)
+        self.conv1 = nn.Conv2d(1, 4, (1, 10))
+        self.batchnorm1 = nn.BatchNorm2d(4)
+        self.conv2 = nn.Conv2d(4, 8, (1, 10))
+        self.batchnorm2 = nn.BatchNorm2d(8)
+        self.conv3 = nn.Conv2d(8, 16, (1, 10))
+        self.batchnorm3 = nn.BatchNorm2d(16)
+        self.conv4 = nn.Conv2d(16, 16, (1, 10))
         self.pool1 = nn.MaxPool2d(2, 1)
         self.pool2 = nn.MaxPool2d(1, 2)
-        self.fc1 = nn.Linear(128 + middle_input_size , 256)
+        self.fc1 = nn.Linear(2560 + middle_input_size, 256)
         # self.dropout_linear1 = nn.Dropout2d(p=drop)
         self.fc2 = nn.Linear(256, 64)
         # self.dropout_linear2 = nn.Dropout2d(p=drop)
@@ -160,9 +71,12 @@ class ImageNet(nn.Module):
     def forward(self, x):
         x2 = x[:, 0, x.size(2) - 1, :]
         x1 = x[:, :, 0:x.size(2) - 1, :]
-        x1=F.relu(self.conv1(x1))
+        x1 = F.relu(self.conv1(x1))
+        x1 = F.relu(self.conv2(x1))
         x1 = self.pool1(x1)
-        x1 = self.pool2(F.relu(self.conv2(x1)))
+        x1 = F.relu(self.conv3(x1))
+        x1 = F.relu(self.conv4(x1))
+        x1 = self.pool2(x1)
 
         x1 = x1.view(-1, x1.size(1) * x1.size(2) * x1.size(3))
         x = torch.cat((x1, x2), -1)
@@ -172,73 +86,6 @@ class ImageNet(nn.Module):
         x = F.sigmoid(self.fc3(x))
 
         return x
-
-
-# save experience log
-def save_log(pos_set, neg_set, new_set, label_set, file_name):
-    f = open(file_name, 'wb')
-    pickle.dump(pos_set, f, pickle.HIGHEST_PROTOCOL)
-    pickle.dump(neg_set, f, pickle.HIGHEST_PROTOCOL)
-    pickle.dump(new_set, f, pickle.HIGHEST_PROTOCOL)
-    pickle.dump(label_set, f, pickle.HIGHEST_PROTOCOL)
-    f.close()
-    return
-
-
-def split_data(data, batch_size=32, validation_rate=0.1):
-    data, label = data
-
-    data = batch_split(data, label, batch_size=batch_size)
-
-    data_size = len(data)
-    validation_size = int(data_size * validation_rate)
-
-    train_data, validation_data = [], []
-
-    for i in range(data_size):
-        if i < validation_size:
-            validation_data.append(data[i])
-        else:
-            train_data.append(data[i])
-
-    print('--split data--')
-    print('data size: ', data_size, ', train data size: ', len(train_data), ', validation data size: ', \
-          len(validation_data))
-
-    return train_data, validation_data
-
-
-def batch_split(images, labels, batch_size=8):
-    data = []
-    each_batch_image = []
-    each_batch_label = []
-    for i in range(len(images)):
-
-        each_batch_image.append(images[i])
-        each_batch_label.append(labels[i])
-
-        if (i + 1) % batch_size == 0:
-            each_batch_image = torch.from_numpy(np.array(each_batch_image)).float()
-            each_batch_label = torch.from_numpy(np.array(each_batch_label)).long()
-            data.append([each_batch_image, each_batch_label])
-            each_batch_image = []
-            each_batch_label = []
-
-    print('-------------------------------------')
-    print('batch length: ', len(data))
-    print('-------------------------------------')
-
-    return data
-
-
-def learning_data_transfer(instance_set=None):
-    new_instance_set = []
-    for i in range(len(instance_set)):
-        new_instance_set.append([instance_set[i]])
-
-    return new_instance_set
-
-
 
 # experience sample
 def synthetic_problems_sample():
@@ -347,7 +194,7 @@ def synthetic_problems_sample():
 
 
 def learning_data_construct():
-    total_path = path + '/ExpLog/SyntheticProbsLog/ackley_resample/'
+    total_path = path + '/ExpLog/SyntheticProbsLog/'
     is_balance = True
 
 
@@ -418,12 +265,12 @@ def learning_exp():
     epoch_size = 50
     batch_size = 32
     vali_rate = 0.1
-    learn_rate = 0.0005
+    learn_rate = 0.0001
     categorical_size = 1
     validation_switch = True
 
-    learner_path = path + '/ExpLearner/SyntheticProbsLearner/ackley_resample/'
-    data_path = path + '/ExpLog/SyntheticProbsLog/ackley_resample/'
+    learner_path = path + '/ExpLearner/SyntheticProbsLearner/'
+    data_path = path + '/ExpLog/SyntheticProbsLog/'
     print(problem_num)
 
     for prob_i in range(problem_num):
@@ -747,6 +594,6 @@ def run_exp_racos_for_synthetic_problem_analysis():
 
 if __name__ == '__main__':
     # synthetic_problems_sample()
-    learning_data_construct()
+    # learning_data_construct()
     learning_exp()
     # run_exp_racos_for_synthetic_problem_analysis()
