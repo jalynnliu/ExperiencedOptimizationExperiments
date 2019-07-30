@@ -24,6 +24,7 @@ from ExpRacos import ExpRacosOptimization
 
 path = '/home/amax/Desktop/ExpAdaptation'
 
+
 def learning_instance_construct(pos_set=None, neg_set=None, new_set=None):
     instance_num = len(pos_set)
 
@@ -463,16 +464,16 @@ def learning_exp():
         train_data = learning_data_transfer(instance_set=train_data)
         test_data = learning_data_transfer(instance_set=test_data)
 
-        print('test data formulation: ', len(test_data), '*', len(test_data[0]), '*', len(test_data[0][0]), '*', \
+        print('test data formulation: ', len(test_data), '*', len(test_data[0]), '*', len(test_data[0][0]), '*',
               len(test_data[0][0][0]))
-        log_buffer.append('--' + 'test data formulation: ' + str(test_data) + '*' + str(test_data[0]) + '*'
-                          + str(test_data[0][0]) + '*' + str(test_data[0][0][0]) + '--')
+        log_buffer.append('--' + 'test data formulation: ' + str(len(test_data)) + '*' + str(len(test_data[0])) + '*'
+                          + str(len(test_data[0][0])) + '*' + str(len(test_data[0][0][0])) + '--')
         print('test label size: ', len(test_label))
         log_buffer.append('--' + 'test label size: ' + str(len(test_label)))
-        print('train data formulation: ', len(train_data), '*', len(train_data[0]), '*', len(train_data[0][0]), '*', \
+        print('train data formulation: ', len(train_data), '*', len(train_data[0]), '*', len(train_data[0][0]), '*',
               len(train_data[0][0][0]))
-        log_buffer.append('--' + 'train data formulation: ' + str(train_data) + '*' + str(train_data[0]) + '*'
-                          + str(train_data[0][0]) + '*' + str(train_data[0][0][0]) + '--')
+        log_buffer.append('--' + 'train data formulation: ' + str(len(train_data)) + '*' + str(len(train_data[0])) + '*'
+                          + str(len(train_data[0][0])) + '*' + str(len(train_data[0][0][0])) + '--')
         print('train label size: ', len(train_label))
         log_buffer.append('--' + 'train label size: ' + str(len(train_label)))
 
@@ -678,16 +679,16 @@ def learning_exp_ensemble():
     train_data = learning_data_transfer(instance_set=train_data)
     # test_data = learning_data_transfer(instance_set=test_data)
 
-    # print('test data formulation: ', len(test_data), '*', len(test_data[0]), '*', len(test_data[0][0]), '*', \
+    # print('test data formulation: ', len(test_data), '*', len(test_data[0]), '*', len(test_data[0][0]), '*',
     #       len(test_data[0][0][0]))
-    # log_buffer.append('--' + 'test data formulation: ' + str(test_data) + '*' + str(test_data[0]) + '*'
-    #                   + str(test_data[0][0]) + '*' + str(test_data[0][0][0]) + '--')
+    # log_buffer.append('--' + 'test data formulation: ' + str(len(test_data)) + '*' + str(len(test_data[0])) + '*'
+    #                   + str(len(test_data[0][0])) + '*' + str(len(test_data[0][0][0])) + '--')
     # print('test label size: ', len(test_label))
     # log_buffer.append('--' + 'test label size: ' + str(len(test_label)))
-    print('train data formulation: ', len(train_data), '*', len(train_data[0]), '*', len(train_data[0][0]), '*', \
+    print('train data formulation: ', len(train_data), '*', len(train_data[0]), '*', len(train_data[0][0]), '*',
           len(train_data[0][0][0]))
-    log_buffer.append('--' + 'train data formulation: ' + str(train_data) + '*' + str(train_data[0]) + '*'
-                      + str(train_data[0][0]) + '*' + str(train_data[0][0][0]) + '--')
+    log_buffer.append('--' + 'train data formulation: ' + str(len(train_data)) + '*' + str(len(train_data[0])) + '*'
+                      + str(len(train_data[0][0])) + '*' + str(len(train_data[0][0][0])) + '--')
     print('train label size: ', len(train_label))
     log_buffer.append('--' + 'train label size: ' + str(len(train_label)))
 
@@ -940,7 +941,6 @@ def run_exp_racos_for_synthetic_problem_analysis():
 
 
 def run_exp_racos_for_synthetic_problem_analysis_ensemble():
-
     # parameters
     sample_size = 10  # the instance number of sampling in an iteration
     budget = 50  # budget in online style
@@ -964,10 +964,10 @@ def run_exp_racos_for_synthetic_problem_analysis_ensemble():
     log_buffer = []
 
     # logging
-    learner_path = path+'/ExpLearner/SyntheticProbsLearner/' + problem_name + '/dimension' + str(dimension_size) \
+    learner_path = path + '/ExpLearner/SyntheticProbsLearner/' + problem_name + '/dimension' + str(dimension_size) \
                    + '/DirectionalModel/' + 'learner-' + problem_name + '-' + 'dim' + str(dimension_size) + '-' \
                    + 'bias' + str(bias_region) + '-'
-    problem_path = path+'/ExpLog/SyntheticProbsLog/' + problem_name + '/dimension' + str(dimension_size) \
+    problem_path = path + '/ExpLog/SyntheticProbsLog/' + problem_name + '/dimension' + str(dimension_size) \
                    + '/RecordLog/' + 'bias-' + problem_name + '-' + 'dim' + str(dimension_size) + '-' \
                    + 'bias' + str(bias_region) + '-'
 
@@ -1059,7 +1059,7 @@ def run_exp_racos_for_synthetic_problem_analysis_ensemble():
     log_buffer.append('--------------------------------------------------')
     log_buffer.append('optimization result: ' + str(opt_mean) + '#' + str(opt_std))
 
-    result_path = path+'/Results/SyntheticProbs/ExperimentTwo/'
+    result_path = path + '/Results/SyntheticProbs/ExperimentTwo/'
     relate_error_file = result_path + 'relate-error-' + problem_name + '-dim' + str(dimension_size) + '-bias' \
                         + str(bias_region) + '2000sphere-ensemble.txt'
     temp_buffer = []
@@ -1075,23 +1075,19 @@ def run_exp_racos_for_synthetic_problem_analysis_ensemble():
     print('optimization logging: ', optimization_log_file)
     fo.FileWriter(optimization_log_file, log_buffer, style='w')
 
-
-
-
-
     log_buffer = []
-    problem_name='ackley'
+    problem_name = 'ackley'
 
     # logging
-    learner_path = path+'/ExpLearner/SyntheticProbsLearner/' + problem_name + '/dimension' + str(dimension_size) \
+    learner_path = path + '/ExpLearner/SyntheticProbsLearner/' + problem_name + '/dimension' + str(dimension_size) \
                    + '/DirectionalModel/' + 'learner-' + problem_name + '-' + 'dim' + str(dimension_size) + '-' \
                    + 'bias' + str(bias_region) + '-'
-    problem_path = path+'/ExpLog/SyntheticProbsLog/' + problem_name + '/dimension' + str(dimension_size) \
+    problem_path = path + '/ExpLog/SyntheticProbsLog/' + problem_name + '/dimension' + str(dimension_size) \
                    + '/RecordLog/' + 'bias-' + problem_name + '-' + 'dim' + str(dimension_size) + '-' \
                    + 'bias' + str(bias_region) + '-'
 
     relate_error_list = []
-    problem_num=1000
+    problem_num = 1000
 
     for prob_i in range(problem_num):
         print(start_index + prob_i, '++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++')
@@ -1130,7 +1126,7 @@ def run_exp_racos_for_synthetic_problem_analysis_ensemble():
         print('learner file: ', learner_file)
 
         net = torch.load(learner_file)
-        net_ensemble[1000+prob_i]=net
+        net_ensemble[1000 + prob_i] = net
 
     opt_error_list = []
 
@@ -1184,6 +1180,7 @@ def run_exp_racos_for_synthetic_problem_analysis_ensemble():
     print('optimization logging: ', optimization_log_file)
     fo.FileWriter(optimization_log_file, log_buffer, style='w')
 
+
 def run_exp_racos_for_synthetic_problem_analysis_remix():
     # parameters
     sample_size = 10  # the instance number of sampling in an iteration
@@ -1209,8 +1206,6 @@ def run_exp_racos_for_synthetic_problem_analysis_remix():
 
     # logging
 
-
-
     func = DistributedFunction(dimension, bias_region=[-0.5, 0.5])
     target_bias = [0.1 for _ in range(dimension_size)]
     func.setBias(target_bias)
@@ -1227,12 +1222,12 @@ def run_exp_racos_for_synthetic_problem_analysis_remix():
         if prob_i > 999:
             problem_name = 'ackley'
             start_index = -1000
-        learner_path = path+'/ExpLearner/SyntheticProbsLearner/' + problem_name + '/dimension' + str(dimension_size) \
-                           + '/DirectionalModel/' + 'learner-' + problem_name + '-' + 'dim' + str(dimension_size) + '-' \
-                           + 'bias' + str(bias_region) + '-'
-        problem_path = path+'/ExpLog/SyntheticProbsLog/' + problem_name + '/dimension' + str(dimension_size) \
-                           + '/RecordLog/' + 'bias-' + problem_name + '-' + 'dim' + str(dimension_size) + '-' \
-                           + 'bias' + str(bias_region) + '-'
+        learner_path = path + '/ExpLearner/SyntheticProbsLearner/' + problem_name + '/dimension' + str(dimension_size) \
+                       + '/DirectionalModel/' + 'learner-' + problem_name + '-' + 'dim' + str(dimension_size) + '-' \
+                       + 'bias' + str(bias_region) + '-'
+        problem_path = path + '/ExpLog/SyntheticProbsLog/' + problem_name + '/dimension' + str(dimension_size) \
+                       + '/RecordLog/' + 'bias-' + problem_name + '-' + 'dim' + str(dimension_size) + '-' \
+                       + 'bias' + str(bias_region) + '-'
 
         print(start_index + prob_i, '++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++')
         log_buffer.append(str(start_index + prob_i) + '++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++')
@@ -1311,8 +1306,8 @@ def run_exp_racos_for_synthetic_problem_analysis_remix():
         log_buffer.append('--------------------------------------------------')
         log_buffer.append('optimization result: ' + str(opt_mean) + '#' + str(opt_std))
 
-    problem_name='sphere'
-    result_path = path+'/Results/SyntheticProbs/ExperimentTwo/'
+    problem_name = 'sphere'
+    result_path = path + '/Results/SyntheticProbs/ExperimentTwo/'
     relate_error_file = result_path + 'relate-error-' + problem_name + '-dim' + str(dimension_size) + '-bias' \
                         + str(bias_region) + 'remix.txt'
     temp_buffer = []
@@ -1327,6 +1322,7 @@ def run_exp_racos_for_synthetic_problem_analysis_remix():
                             + str(bias_region) + 'remix.txt'
     print('optimization logging: ', optimization_log_file)
     fo.FileWriter(optimization_log_file, log_buffer, style='w')
+
 
 if __name__ == '__main__':
     # synthetic_problems_sample(problem_size=1000, problem_name='ackley')

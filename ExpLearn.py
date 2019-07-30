@@ -28,9 +28,9 @@ class ImageNet(nn.Module):
         self.conv2 = nn.Conv2d(4, 8, 2)
         self.pool1 = nn.MaxPool2d(2, 1)
         self.pool2 = nn.MaxPool2d(1, 2)
-        self.fc1 = nn.Linear(64 + middle_input_size, 128)
+        self.fc1 = nn.Linear(128 + middle_input_size, 256)
         # self.dropout_linear1 = nn.Dropout2d(p=drop)
-        self.fc2 = nn.Linear(128, 64)
+        self.fc2 = nn.Linear(256, 64)
         # self.dropout_linear2 = nn.Dropout2d(p=drop)
         self.fc3 = nn.Linear(64, output_size)
         # self.dropout_linear3 = nn.Dropout2d(p=drop)
@@ -609,16 +609,16 @@ def learning_exp():
         train_data = learning_data_transfer(instance_set=train_data)
         test_data = learning_data_transfer(instance_set=test_data)
 
-        print('test data formulation: ', len(test_data), '*', len(test_data[0]), '*', len(test_data[0][0]), '*',\
-            len(test_data[0][0][0]))
-        log_buffer.append('--' + 'test data formulation: ' + str(test_data) + '*' + str(test_data[0]) + '*'
-                          + str(test_data[0][0]) + '*' + str(test_data[0][0][0]) + '--')
+        print('test data formulation: ', len(test_data), '*', len(test_data[0]), '*', len(test_data[0][0]), '*',
+              len(test_data[0][0][0]))
+        log_buffer.append('--' + 'test data formulation: ' + str(len(test_data)) + '*' + str(len(test_data[0])) + '*'
+                          + str(len(test_data[0][0])) + '*' + str(len(test_data[0][0][0])) + '--')
         print('test label size: ', len(test_label))
         log_buffer.append('--' + 'test label size: ' + str(len(test_label)))
-        print('train data formulation: ', len(train_data), '*', len(train_data[0]), '*', len(train_data[0][0]), '*',\
-            len(train_data[0][0][0]))
-        log_buffer.append('--' + 'train data formulation: ' + str(train_data) + '*' + str(train_data[0]) + '*'
-                          + str(train_data[0][0]) + '*' + str(train_data[0][0][0]) + '--')
+        print('train data formulation: ', len(train_data), '*', len(train_data[0]), '*', len(train_data[0][0]), '*',
+              len(train_data[0][0][0]))
+        log_buffer.append('--' + 'train data formulation: ' + str(len(train_data)) + '*' + str(len(train_data[0])) + '*'
+                          + str(len(train_data[0][0])) + '*' + str(len(train_data[0][0][0])) + '--')
         print('train label size: ', len(train_label))
         log_buffer.append('--' + 'train label size: ' + str(len(train_label)))
 
