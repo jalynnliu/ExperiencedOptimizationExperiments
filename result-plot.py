@@ -1,12 +1,12 @@
 import numpy as np
 import matplotlib.pyplot as plt
 
-path = '/home/amax/Desktop/ExpAdaptation'
+path = '/data/ExpAdaptation'
 
 
 def meanScatter():
     a = []
-    problem_name = 'ackley'
+    problem_name = 'sphere'
     for j in range(1):
         f = open(
             path + '/Results/SyntheticProbs/' + problem_name + '/dimension10/opt-log-' + problem_name + '-dim10-bias0.5.txt')

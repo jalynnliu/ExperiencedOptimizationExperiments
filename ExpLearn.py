@@ -36,11 +36,10 @@ class ImageNet(nn.Module):
         # self.dropout_linear3 = nn.Dropout2d(p=drop)
 
     def forward(self, x):
-
         x2 = x[:, 0, x.size(2) - 1, :]
         x1 = x[:, :, 0:x.size(2) - 1, :]
-
-        x1 = self.pool1(F.relu(self.conv1(x1)))
+        x1 = F.relu(self.conv1(x1))
+        x1 = self.pool1(x1)
         x1 = self.pool2(F.relu(self.conv2(x1)))
 
         x1 = x1.view(-1, x1.size(1) * x1.size(2) * x1.size(3))
@@ -58,26 +57,31 @@ class ComplexImageNet(nn.Module):
     def __init__(self, middle_input_size=0, output_size=0):
         super(ComplexImageNet, self).__init__()
 
-        self.conv1 = nn.Conv2d(1, 4, 2)
-        self.conv2 = nn.Conv2d(4, 8, 2)
+        self.conv1 = nn.Conv2d(1, 4, (1, 10))
+        self.batchnorm1 = nn.BatchNorm2d(4)
+        self.conv2 = nn.Conv2d(4, 8, (1, 10))
+        self.batchnorm2 = nn.BatchNorm2d(8)
+        self.conv3 = nn.Conv2d(8, 16, (1, 10))
+        self.batchnorm3 = nn.BatchNorm2d(16)
+        self.conv4 = nn.Conv2d(16, 16, (1, 10))
         self.pool1 = nn.MaxPool2d(2, 1)
-        self.pool2 = nn.MaxPool2d(2)
-        self.fc1 = nn.Linear(192 + middle_input_size, 128)
+        self.pool2 = nn.MaxPool2d(1, 2)
+        self.fc1 = nn.Linear(2560 + middle_input_size, 256)
         # self.dropout_linear1 = nn.Dropout2d(p=drop)
-        self.fc2 = nn.Linear(128, 64)
+        self.fc2 = nn.Linear(256, 64)
         # self.dropout_linear2 = nn.Dropout2d(p=drop)
         self.fc3 = nn.Linear(64, output_size)
         # self.dropout_linear3 = nn.Dropout2d(p=drop)
 
     def forward(self, x):
-
         x2 = x[:, 0, x.size(2) - 1, :]
         x1 = x[:, :, 0:x.size(2) - 1, :]
-
-        x1 = self.pool1(F.relu(self.conv1(x1)))
-        x1 = self.pool2(F.relu(self.conv2(x1)))
-
-        # print x1
+        x1 = F.relu(self.conv1(x1))
+        x1 = F.relu(self.conv2(x1))
+        x1 = self.pool1(x1)
+        x1 = F.relu(self.conv3(x1))
+        x1 = F.relu(self.conv4(x1))
+        x1 = self.pool2(x1)
 
         x1 = x1.view(-1, x1.size(1) * x1.size(2) * x1.size(3))
         x = torch.cat((x1, x2), -1)

@@ -21,9 +21,10 @@ from SyntheticProbsSample import read_log
 import copy
 from Tools import string2list
 from ExpRacos import ExpRacosOptimization
+import os
 
-path = '/home/amax/Desktop/ExpAdaptation'
-
+path = '/data/ExpAdaptation'
+os.environ["CUDA_VISIBLE_DEVICES"] = '1'
 
 def learning_instance_construct(pos_set=None, neg_set=None, new_set=None):
     instance_num = len(pos_set)
@@ -119,14 +120,20 @@ def learning_instance_balance(tensors=None, labels=None):
 
 class ImageNet(nn.Module):
 
-    def __init__(self, middle_input_size=0, output_size=0):
-        super(ImageNet, self).__init__()
 
-        self.conv1 = nn.Conv2d(1, 4, 2)
-        self.conv2 = nn.Conv2d(4, 8, 2)
+    def __init__(self, middle_input_size=0, output_size=0):
+        super(ComplexImageNet, self).__init__()
+
+        self.conv1 = nn.Conv2d(1, 4, (1, 10))
+        self.batchnorm1 = nn.BatchNorm2d(4)
+        self.conv2 = nn.Conv2d(4, 8, (1, 10))
+        self.batchnorm2 = nn.BatchNorm2d(8)
+        self.conv3 = nn.Conv2d(8, 16, (1, 10))
+        self.batchnorm3 = nn.BatchNorm2d(16)
+        self.conv4 = nn.Conv2d(16, 16, (1, 10))
         self.pool1 = nn.MaxPool2d(2, 1)
         self.pool2 = nn.MaxPool2d(1, 2)
-        self.fc1 = nn.Linear(128 + middle_input_size, 256)
+        self.fc1 = nn.Linear(2560 + middle_input_size, 256)
         # self.dropout_linear1 = nn.Dropout2d(p=drop)
         self.fc2 = nn.Linear(256, 64)
         # self.dropout_linear2 = nn.Dropout2d(p=drop)
@@ -137,8 +144,11 @@ class ImageNet(nn.Module):
         x2 = x[:, 0, x.size(2) - 1, :]
         x1 = x[:, :, 0:x.size(2) - 1, :]
         x1 = F.relu(self.conv1(x1))
+        x1 = F.relu(self.conv2(x1))
         x1 = self.pool1(x1)
-        x1 = self.pool2(F.relu(self.conv2(x1)))
+        x1 = F.relu(self.conv3(x1))
+        x1 = F.relu(self.conv4(x1))
+        x1 = self.pool2(x1)
 
         x1 = x1.view(-1, x1.size(1) * x1.size(2) * x1.size(3))
         x = torch.cat((x1, x2), -1)
@@ -806,9 +816,9 @@ def run_exp_racos_for_synthetic_problem_analysis():
 
     opt_repeat = 10
 
-    dimension_size = 10
-    problem_name = 'rosenbrock'
-    problem_num = 1000
+    dimension_size = 100
+    problem_name = 'sphere'
+    problem_num = 2000
     start_index = 0
     bias_region = 0.5
 
@@ -1192,9 +1202,9 @@ def run_exp_racos_for_synthetic_problem_analysis_remix():
 
     opt_repeat = 10
 
-    dimension_size = 10
-    problem_name = 'sphere'
-    problem_num = 2000
+    dimension_size = 100
+    problem_name = 'rosenbrock'
+    problem_num = 1000
     start_index = 0
     bias_region = 0.5
 
