@@ -11,6 +11,7 @@ from Racos import RacosOptimization
 from ExpRacos import ExpRacosOptimization
 from ExpLearn import ImageNet
 import matplotlib.pyplot as plt
+from multiprocessing import Pool
 
 path = '/data/ExpAdaptation'
 log_buffer = []
@@ -56,7 +57,7 @@ def get_predicotrs():
             this_learner = torch.load(learner_file)
             nets.append(this_learner)
             this_predictor = ExpContainer(prob_name=learner_name, prob_index=start_index + learner_i,
-                                          predictor=this_learner, dist=dist)
+                                          predictor=this_learner, dist=0)
             predictors.append(this_predictor)
 
             # sort_q.append((learner_i, dist))
@@ -70,13 +71,14 @@ def get_predicotrs():
     return predictors, nets
 
 
-def run(budget, type):
+def run(type):
     # parameters
     sample_size = 10  # the instance number of sampling in an iteration
     positive_num = 2  # the set size of PosPop
     rand_probability = 0.99  # the probability of sample in model
     uncertain_bit = 2  # the dimension size that is sampled randomly
     adv_threshold = 10
+    budget = 200
 
     opt_repeat = 10
 
@@ -95,18 +97,19 @@ def run(budget, type):
         # pre=sorted(predictors,key=lambda a:a.dist)
         expert = Experts(predictors=predictors, eta=0.9, bg=budget)
 
+
     for i in range(opt_repeat):
         print('optimize ', i, '===================================================')
         log_buffer.append('optimize ' + str(i) + '===================================================')
         start_t = time.time()
         if type == 'exp':
             exp_racos = ExpRacosOptimization(dimension, nets)
-            exp_racos.exp_mix_opt(obj_fct=prob_fct, ss=sample_size, bud=budget, pn=positive_num,
-                                  rp=rand_probability, ub=uncertain_bit, at=adv_threshold)
+            res = exp_racos.exp_mix_opt(obj_fct=prob_fct, ss=sample_size, bud=budget, pn=positive_num,
+                                        rp=rand_probability, ub=uncertain_bit, at=adv_threshold)
         elif type == 'ada':
             exp_racos = ExpAdaRacosOptimization(dimension, expert)
-            exp_racos.exp_ada_mix_opt(obj_fct=prob_fct, ss=sample_size, bud=budget, pn=positive_num,
-                                      rp=rand_probability, ub=uncertain_bit, at=adv_threshold)
+            res = exp_racos.exp_ada_mix_opt(obj_fct=prob_fct, ss=sample_size, bud=budget, pn=positive_num,
+                                            rp=rand_probability, ub=uncertain_bit, at=adv_threshold)
         else:
             print('Wrong type!')
             return
@@ -117,24 +120,14 @@ def run(budget, type):
         print('spending time: ', hour, ':', minute, ':', second)
         log_buffer.append('spending time: ' + str(hour) + '+' + str(minute) + '+' + str(second))
 
-        optimal = exp_racos.get_optimal()
-        opt_error = optimal.get_fitness()
-        optimal_x = optimal.get_features()
+        opt_error_list.append(res)
 
-        opt_error_list.append(opt_error)
-        print('validation optimal value: ', opt_error)
-        log_buffer.append('validation optimal value: ' + str(opt_error))
-        print('optimal x: ', optimal_x)
-        log_buffer.append('optimal nn structure: ' + list2string(optimal_x))
-
-    opt_mean = np.mean(np.array(opt_error_list))
-    opt_std = np.std(np.array(opt_error_list))
+    opt_mean = np.mean(np.array(opt_error_list), axis=0)
     print('--------------------------------------------------')
-    print('optimization result for ' + str(opt_repeat) + ' times average: ', opt_mean, ', standard variance is: ',
-          opt_std)
+    print('optimization result for ' + str(opt_repeat) + ' times average: ', opt_mean)
     log_buffer.append('--------------------------------------------------')
     log_buffer.append('optimization result for ' + str(opt_repeat) + ' times average: ' + str(
-        opt_mean) + ', standard variance is: ' + str(opt_std))
+        opt_mean))
 
     return opt_mean
 
@@ -209,13 +202,11 @@ if __name__ == "__main__":
     predictors, nets = get_predicotrs()
 
     pure_racos = run_racos()
-    y1 = []
-    y2 = []
-    for i in range(200):
-        y1.append(run(i, 'exp'))
-        y2.append(run(i, 'ada'))
-    x = [i for i in range(200)]
-    plt.plot(x, pure_racos)
+    y1 = run('exp')
+    y2 = run('ada')
+    x = [i for i in range(len(y1))]
+    y0 = [pure_racos for _ in range(len(y1))]
+    plt.plot(x, y0)
     plt.plot(x, y1)
     plt.plot(x, y2)
     plt.show()

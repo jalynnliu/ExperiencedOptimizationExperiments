@@ -68,17 +68,17 @@ class Experts(object):
         # self.weights-=min(x)
         self.weights /= x.sum()
         # self.weights = self.weights.tolist()
-        if (flag and self.pic_count < (self.bg / 10)) or self.pic_count == 0:
-            if True:
-                index = [i * 2 + 1 for i in range(int(len(self.weights) / 2))]
-                plt.scatter(range(len(self.weights[index])), self.weights[index], c='red')
-                plt.scatter(range(len(self.weights[[i * 2 for i in range(int(len(self.weights) / 2))]])),
-                            self.weights[[i * 2 for i in range(int(len(self.weights) / 2))]], c='blue')
-            else:
-                plt.scatter(range(len(self.weights)), self.weights)
-            plt.show()
-            self.pic_count += 1
-            print(self.weights)
+        # if (flag and self.pic_count < (self.bg / 10)) or self.pic_count == 0:
+        #     if True:
+        #         index = [i * 2 + 1 for i in range(int(len(self.weights) / 2))]
+        #         plt.scatter(range(len(self.weights[index])), self.weights[index], c='red')
+        #         plt.scatter(range(len(self.weights[[i * 2 for i in range(int(len(self.weights) / 2))]])),
+        #                     self.weights[[i * 2 for i in range(int(len(self.weights) / 2))]], c='blue')
+        #     else:
+        #         plt.scatter(range(len(self.weights)), self.weights)
+        #     plt.show()
+        #     self.pic_count += 1
+        #     print(self.weights)
 
         return
 
@@ -541,6 +541,7 @@ class ExpAdaRacosOptimization:
         sample_count = 0
         all_dist_count = 0
         flag = False
+        res = []
 
         # initialize sample set
         self.clear()
@@ -559,6 +560,7 @@ class ExpAdaRacosOptimization:
         budget_c = self.__sample_size + self.__positive_num
         while budget_c < self.__budget:
             budget_c += 1
+            res.append(self.__optimal.get_fitness())
             if budget_c % 10 == 0:
                 # print '======================================================'
                 print('budget ', budget_c, ':', self.__optimal.get_fitness())
@@ -628,4 +630,4 @@ class ExpAdaRacosOptimization:
         # print 'average sample times of each sample:', float(sample_count) / self.__budget
         # print 'average shrink times of each sample:', float(all_dist_count) / sample_count
 
-        return
+        return res
