@@ -14,7 +14,7 @@ from ExpRacos import ExpRacosOptimization
 from ExpLearn import ImageNet
 import matplotlib.pyplot as plt
 
-path = '/home/amax/Desktop/ExpAdaptation'
+path = '/data/ExpAdaptation'
 sample_size = 10  # the instance number of sampling in an iteration
 budget = 50  # budget in online style
 positive_num = 2  # the set size of PosPop
@@ -187,12 +187,12 @@ def run(type):
         start_t = time.time()
         if type == 'ave':
             exp_racos = ExpRacosOptimization(dimension, nets)
-            exp_racos.exp_mix_opt(obj_fct=prob_fct, ss=sample_size, bud=budget, pn=positive_num,
-                                  rp=rand_probability, ub=uncertain_bit, at=adv_threshold)
+            opt_error = exp_racos.exp_mix_opt(obj_fct=prob_fct, ss=sample_size, bud=budget, pn=positive_num,
+                                              rp=rand_probability, ub=uncertain_bit, at=adv_threshold)
         elif type == 'ada':
             exp_racos = ExpAdaRacosOptimization(dimension, expert)
-            exp_racos.exp_ada_mix_opt(obj_fct=prob_fct, ss=sample_size, bud=budget, pn=positive_num,
-                                      rp=rand_probability, ub=uncertain_bit, at=adv_threshold)
+            opt_error = exp_racos.exp_ada_mix_opt(obj_fct=prob_fct, ss=sample_size, bud=budget, pn=positive_num,
+                                                  rp=rand_probability, ub=uncertain_bit, at=adv_threshold)
         elif type == 'ground truth':
             exp_racos = ExpRacosOptimization(dimension, nets[:step])
             exp_racos.exp_mix_opt(obj_fct=prob_fct, ss=sample_size, bud=budget, pn=positive_num,
@@ -217,8 +217,8 @@ def run(type):
         print('optimal x: ', optimal_x)
         log_buffer.append('optimal nn structure: ' + list2string(optimal_x))
 
-    opt_mean = np.mean(np.array(opt_error_list))
-    opt_std = np.std(np.array(opt_error_list))
+    opt_mean = np.mean(np.array(opt_error_list), axis=0)
+    opt_std = np.std(np.array(opt_error_list), axis=0)
     print('--------------------------------------------------')
     print('optimization result for ' + str(opt_repeat) + ' times average: ', opt_mean, ', standard variance is: ',
           opt_std)
@@ -243,7 +243,7 @@ def run_no_expert():
 
     for i in range(opt_repeat):
         start_t = time.time()
-        racos.mix_opt(prob_fct, ss=sample_size, bud=budget, pn=positive_num, rp=rand_probability,
+        racos.mix_opt(prob_fct, ss=sample_size, bud=500, pn=positive_num, rp=rand_probability,
                       ub=uncertain_bit)
         end_t = time.time()
 
@@ -305,20 +305,26 @@ if __name__ == '__main__':
     log_buffer.append('bias: ' + list2string(target_bias))
     log_buffer.append('+++++++++++++++++++++++++++++++')
 
-    predictors, nets = get_mixed_predicotrs()
+    predictors, nets = get_predicotrs()
 
     opt_mean_gt, opt_std_gt = run('ground truth')
     opt_mean_ada, opt_std_ada = run('ada')
     opt_mean_ave, opt_std_ave = run('ave')
     opt_mean_ne, opt_std_ne = run_no_expert()
+    x = [i for i in range(len(opt_mean_ada))]
+    y0 = [opt_mean_ne for _ in range(len(opt_mean_ada))]
+    plt.plot(x, y0)
+    plt.plot(x, opt_mean_ada)
+    plt.plot(x, opt_mean_ave)
+    plt.show()
 
     print(
         'We got the final results for ' + problem_name + ' with ' + str(learner_num) + ' ' + learner_name + ' experts')
     log_buffer.append(
         'We got the final results for ' + problem_name + ' with ' + str(learner_num) + ' ' + learner_name + ' experts')
-    print('optimization result for ground truth: ', opt_mean_gt, ', standard variance is: ', opt_std_gt)
-    log_buffer.append(
-        'optimization result for ground truth: ' + str(opt_mean_gt) + ', standard variance is: ' + str(opt_std_gt))
+    # print('optimization result for ground truth: ', opt_mean_gt, ', standard variance is: ', opt_std_gt)
+    # log_buffer.append(
+    #     'optimization result for ground truth: ' + str(opt_mean_gt) + ', standard variance is: ' + str(opt_std_gt))
     print('optimization result for adaptive: ', opt_mean_ada, ', standard variance is: ', opt_std_ada)
     log_buffer.append(
         'optimization result for adaptive: ' + str(opt_mean_ada) + ', standard variance is: ' + str(opt_std_ada))
@@ -331,10 +337,10 @@ if __name__ == '__main__':
         'optimization result for no experts pure Racos: ' + str(opt_mean_ne) + ', standard variance is: ' + str(
             opt_std_ne))
 
-    result_path = path + '/Results/ExperimentThree/'
+    result_path = path + '/Results/'
 
     optimization_log_file = result_path + 'opt-log-' + problem_name + '-with-' + str(
-        learner_num) + learner_name + '-budget' + str(budget) + '-mixed.txt'
+        learner_num) + learner_name + '-budget' + str(budget) + '-budget-plot.txt'
     print('optimization logging: ', optimization_log_file)
     fo.FileWriter(optimization_log_file, log_buffer, style='w')
 
