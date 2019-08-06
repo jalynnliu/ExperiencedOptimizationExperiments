@@ -28,7 +28,7 @@ sample_size = 10  # the instance number of sampling in an iteration
 budget = 500  # budget in online style
 positive_num = 2  # the set size of PosPop
 rand_probability = 0.99  # the probability of sample in model
-uncertain_bits = 20  # the dimension size that is sampled randomly
+uncertain_bits = 2  # the dimension size that is sampled randomly
 
 start_index = 511
 problem_name = 'sphere'
@@ -40,7 +40,7 @@ exp_path = path + '/ExpLog/SyntheticProbsLog/'
 
 bias_region = 0.5
 
-dimension_size = 100
+dimension_size = 10
 
 dimension = Dimension()
 dimension.set_dimension_size(dimension_size)
@@ -471,6 +471,7 @@ def run_exp_racos_for_synthetic_problem_analysis():
 
     opt_repeat = 10
     log_buffer = []
+    budget = 50
 
     # logging
     learner_path = path+'/ExpLearner/SyntheticProbsLearner/' + problem_name + '/dimension' + str(dimension_size)\
@@ -593,7 +594,7 @@ def run_exp_racos_for_synthetic_problem_analysis():
 
 
 if __name__ == '__main__':
-    # synthetic_problems_sample()
-    # learning_data_construct()
+    synthetic_problems_sample()
+    learning_data_construct()
     learning_exp()
     # run_exp_racos_for_synthetic_problem_analysis()

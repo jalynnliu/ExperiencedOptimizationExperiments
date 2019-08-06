@@ -286,8 +286,9 @@ class ExpRacosOptimization:
             temp = ins
             ins = self.__pop[self.__sample_size - 1]
             k = self.__sample_size - 1
-            while k < j:
-                self.__pop[k] = self.__pop[k - 1]
+            while k > j:
+                self.__pos_pop[k] = self.__pos_pop[k - 1]
+                k -= 1
             self.__pop[j] = temp
 
         return

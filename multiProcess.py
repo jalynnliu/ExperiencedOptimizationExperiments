@@ -6,7 +6,6 @@ import time
 import FileOperator as fo
 from torch.autograd import Variable
 import torch.nn as nn
-import torch.nn.functional as F
 import torch.optim as optim
 import torch
 import numpy as np
@@ -17,13 +16,14 @@ from sklearn.metrics import precision_score
 from sklearn.metrics import accuracy_score
 from Run_Racos import time_formulate
 from ExpDataProcess import learning_data_load, learning_instance_construct, learning_instance_balance
-from ExpLearn import learning_data_transfer, split_data, batch_split
+from ExpLearn import learning_data_transfer, split_data
 from SyntheticProbsSample import read_log, save_log
 import copy
 from Tools import string2list
 from ExpRacos import ExpRacosOptimization
-from multiprocessing import Process, Queue, Pool
+from multiprocessing import Queue, Pool
 import os
+from ExpLearn import ImageNet
 
 os.environ["CUDA_VISIBLE_DEVICES"] = '0'
 
@@ -32,9 +32,9 @@ sample_size = 10  # the instance number of sampling in an iteration
 budget = 500  # budget in online style
 positive_num = 2  # the set size of PosPop
 rand_probability = 0.99  # the probability of sample in model
-uncertain_bits = 20  # the dimension size that is sampled randomly
+uncertain_bits = 2  # the dimension size that is sampled randomly
 
-start_index = 528
+start_index = 0
 problem_name = 'sphere'
 problem_num = 2000 - start_index
 
@@ -42,58 +42,13 @@ repeat_num = 10
 
 exp_path = path + '/ExpLog/SyntheticProbsLog/'
 
-bias_region = 0.5
+bias_region = 1
 
-dimension_size = 100
+dimension_size = 10
 
 dimension = Dimension()
 dimension.set_dimension_size(dimension_size)
 dimension.set_regions([[-1.0, 1.0] for _ in range(dimension_size)], [0 for _ in range(dimension_size)])
-
-kernels = 20
-sample_q = Queue()
-data_q = Queue()
-
-
-class ImageNet(nn.Module):
-
-    def __init__(self, middle_input_size=0, output_size=0):
-        super(ImageNet, self).__init__()
-
-        self.conv1 = nn.Conv2d(1, 4, (1, 10))
-        self.batchnorm1 = nn.BatchNorm2d(4)
-        self.conv2 = nn.Conv2d(4, 8, (1, 10))
-        self.batchnorm2 = nn.BatchNorm2d(8)
-        self.conv3 = nn.Conv2d(8, 16, (1, 10))
-        self.batchnorm3 = nn.BatchNorm2d(16)
-        self.conv4 = nn.Conv2d(16, 16, (1, 10))
-        self.pool1 = nn.MaxPool2d(2, 1)
-        self.pool2 = nn.MaxPool2d(1, 2)
-        self.fc1 = nn.Linear(2560 + middle_input_size, 256)
-        # self.dropout_linear1 = nn.Dropout2d(p=drop)
-        self.fc2 = nn.Linear(256, 64)
-        # self.dropout_linear2 = nn.Dropout2d(p=drop)
-        self.fc3 = nn.Linear(64, output_size)
-        # self.dropout_linear3 = nn.Dropout2d(p=drop)
-
-    def forward(self, x):
-        x2 = x[:, 0, x.size(2) - 1, :]
-        x1 = x[:, :, 0:x.size(2) - 1, :]
-        x1 = F.relu(self.conv1(x1))
-        x1 = F.relu(self.conv2(x1))
-        x1 = self.pool1(x1)
-        x1 = F.relu(self.conv3(x1))
-        x1 = F.relu(self.conv4(x1))
-        x1 = self.pool2(x1)
-
-        x1 = x1.view(-1, x1.size(1) * x1.size(2) * x1.size(3))
-        x = torch.cat((x1, x2), -1)
-
-        x = F.relu(self.fc1(x))
-        x = F.relu(self.fc2(x))
-        x = F.sigmoid(self.fc3(x))
-
-        return x
 
 
 # experience sample
@@ -195,7 +150,6 @@ def synthetic_problems_sample(prob_i):
 
     print('running logging: ', running_log_file)
     fo.FileWriter(running_log_file, running_log, style='w')
-    sample_q.put(prob_i)
 
     return
 
@@ -268,7 +222,7 @@ def learning_exp(prob_i):
     epoch_size = 50
     batch_size = 32
     vali_rate = 0.1
-    learn_rate = 0.0001
+    learn_rate = 0.0005
     categorical_size = 1
     validation_switch = True
 
@@ -463,6 +417,7 @@ def learning_exp(prob_i):
 
 def run_exp_racos_for_synthetic_problem_analysis():
     # parameters
+    budget = 50
     positive_num = 2  # the set size of PosPop
     rand_probability = 0.99  # the probability of sample in model
     uncertain_bit = 1  # the dimension size that is sampled randomly
@@ -589,18 +544,22 @@ def run_exp_racos_for_synthetic_problem_analysis():
 
 
 if __name__ == '__main__':
-    # sample_p = Pool(20)
-    # data_p = Pool(20)
-    predictor_p = Pool(12)
-    for i in range(problem_num):
-        # sample_p.apply_async(synthetic_problems_sample, args=(i,))
-        # data_i=sample_q.get()
-        # data_p.apply_async(learning_data_construct,args=(data_i,))
-        # predictor_i=data_q.get()
-        predictor_p.apply_async(learning_exp, args=(i,))
-    predictor_p.close()
-    predictor_p.join()
+    # p = Pool()
+    # for i in range(problem_num):
+    #     p.apply_async(synthetic_problems_sample, args=(i,))
+    # p.close()
+    # p.join()
+    #
+    # p = Pool()
+    # for i in range(problem_num):
+    #     p.apply_async(learning_data_construct, args=(i,))
+    # p.close()
+    # p.join()
 
-    # learning_data_construct()
-    # learning_exp()
-    # run_exp_racos_for_synthetic_problem_analysis()
+    p = Pool(12)
+    for i in range(problem_num):
+        p.apply_async(learning_exp, args=(i,))
+    p.close()
+    p.join()
+
+    run_exp_racos_for_synthetic_problem_analysis()

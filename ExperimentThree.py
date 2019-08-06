@@ -25,7 +25,7 @@ dimension_size = 10
 opt_repeat = 10
 
 problem_name = 'sphere'
-bias_region = 0.5
+bias_region = 1
 learner_name = 'sphere'
 start_index = 0
 learner_num = 2000
@@ -322,9 +322,9 @@ if __name__ == '__main__':
         'We got the final results for ' + problem_name + ' with ' + str(learner_num) + ' ' + learner_name + ' experts')
     log_buffer.append(
         'We got the final results for ' + problem_name + ' with ' + str(learner_num) + ' ' + learner_name + ' experts')
-    # print('optimization result for ground truth: ', opt_mean_gt, ', standard variance is: ', opt_std_gt)
-    # log_buffer.append(
-    #     'optimization result for ground truth: ' + str(opt_mean_gt) + ', standard variance is: ' + str(opt_std_gt))
+    print('optimization result for ground truth: ', opt_mean_gt, ', standard variance is: ', opt_std_gt)
+    log_buffer.append(
+        'optimization result for ground truth: ' + str(opt_mean_gt) + ', standard variance is: ' + str(opt_std_gt))
     print('optimization result for adaptive: ', opt_mean_ada, ', standard variance is: ', opt_std_ada)
     log_buffer.append(
         'optimization result for adaptive: ' + str(opt_mean_ada) + ', standard variance is: ' + str(opt_std_ada))

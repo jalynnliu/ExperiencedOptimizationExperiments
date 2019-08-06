@@ -68,17 +68,17 @@ class Experts(object):
         # self.weights-=min(x)
         self.weights /= x.sum()
         # self.weights = self.weights.tolist()
-        # if (flag and self.pic_count < (self.bg / 10)) or self.pic_count == 0:
-        #     if True:
-        #         index = [i * 2 + 1 for i in range(int(len(self.weights) / 2))]
-        #         plt.scatter(range(len(self.weights[index])), self.weights[index], c='red')
-        #         plt.scatter(range(len(self.weights[[i * 2 for i in range(int(len(self.weights) / 2))]])),
-        #                     self.weights[[i * 2 for i in range(int(len(self.weights) / 2))]], c='blue')
-        #     else:
-        #         plt.scatter(range(len(self.weights)), self.weights)
-        #     plt.show()
-        #     self.pic_count += 1
-        #     print(self.weights)
+        if (flag and self.pic_count < (self.bg / 10)) or self.pic_count == 0:
+            if False:
+                index = [i * 2 + 1 for i in range(int(len(self.weights) / 2))]
+                plt.scatter(range(len(self.weights[index])), self.weights[index], c='red')
+                plt.scatter(range(len(self.weights[[i * 2 for i in range(int(len(self.weights) / 2))]])),
+                            self.weights[[i * 2 for i in range(int(len(self.weights) / 2))]], c='blue')
+            else:
+                plt.scatter(range(len(self.weights)), self.weights)
+            plt.show()
+            self.pic_count += 1
+            print(self.weights)
 
         return
 
@@ -346,8 +346,9 @@ class ExpAdaRacosOptimization:
             temp = ins
             ins = self.__pop[self.__sample_size - 1]
             k = self.__sample_size - 1
-            while k < j:
-                self.__pop[k] = self.__pop[k - 1]
+            while k > j:
+                self.__pos_pop[k] = self.__pos_pop[k - 1]
+                k -= 1
             self.__pop[j] = temp
 
         return
@@ -615,6 +616,8 @@ class ExpAdaRacosOptimization:
             else:
                 truth_label = 0
 
+            t = np.array(prob_matrix)[:, max_index].T.tolist()
+            print(t)
             self.__expert.update_weights(np.array(prob_matrix)[:, max_index].T, truth_label, flag)
             flag = False
 

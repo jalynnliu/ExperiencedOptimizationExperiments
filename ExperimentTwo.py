@@ -22,6 +22,7 @@ import copy
 from Tools import string2list
 from ExpRacos import ExpRacosOptimization
 import os
+from ExpLearn import ImageNet
 
 path = '/data/ExpAdaptation'
 os.environ["CUDA_VISIBLE_DEVICES"] = '1'
@@ -118,46 +119,46 @@ def learning_instance_balance(tensors=None, labels=None):
     return all_tensor, all_label
 
 
-class ImageNet(nn.Module):
-
-
-    def __init__(self, middle_input_size=0, output_size=0):
-        super(ComplexImageNet, self).__init__()
-
-        self.conv1 = nn.Conv2d(1, 4, (1, 10))
-        self.batchnorm1 = nn.BatchNorm2d(4)
-        self.conv2 = nn.Conv2d(4, 8, (1, 10))
-        self.batchnorm2 = nn.BatchNorm2d(8)
-        self.conv3 = nn.Conv2d(8, 16, (1, 10))
-        self.batchnorm3 = nn.BatchNorm2d(16)
-        self.conv4 = nn.Conv2d(16, 16, (1, 10))
-        self.pool1 = nn.MaxPool2d(2, 1)
-        self.pool2 = nn.MaxPool2d(1, 2)
-        self.fc1 = nn.Linear(2560 + middle_input_size, 256)
-        # self.dropout_linear1 = nn.Dropout2d(p=drop)
-        self.fc2 = nn.Linear(256, 64)
-        # self.dropout_linear2 = nn.Dropout2d(p=drop)
-        self.fc3 = nn.Linear(64, output_size)
-        # self.dropout_linear3 = nn.Dropout2d(p=drop)
-
-    def forward(self, x):
-        x2 = x[:, 0, x.size(2) - 1, :]
-        x1 = x[:, :, 0:x.size(2) - 1, :]
-        x1 = F.relu(self.conv1(x1))
-        x1 = F.relu(self.conv2(x1))
-        x1 = self.pool1(x1)
-        x1 = F.relu(self.conv3(x1))
-        x1 = F.relu(self.conv4(x1))
-        x1 = self.pool2(x1)
-
-        x1 = x1.view(-1, x1.size(1) * x1.size(2) * x1.size(3))
-        x = torch.cat((x1, x2), -1)
-
-        x = F.relu(self.fc1(x))
-        x = F.relu(self.fc2(x))
-        x = F.sigmoid(self.fc3(x))
-
-        return x
+# class ImageNet(nn.Module):
+#
+#
+#     def __init__(self, middle_input_size=0, output_size=0):
+#         super(ComplexImageNet, self).__init__()
+#
+#         self.conv1 = nn.Conv2d(1, 4, (1, 10))
+#         self.batchnorm1 = nn.BatchNorm2d(4)
+#         self.conv2 = nn.Conv2d(4, 8, (1, 10))
+#         self.batchnorm2 = nn.BatchNorm2d(8)
+#         self.conv3 = nn.Conv2d(8, 16, (1, 10))
+#         self.batchnorm3 = nn.BatchNorm2d(16)
+#         self.conv4 = nn.Conv2d(16, 16, (1, 10))
+#         self.pool1 = nn.MaxPool2d(2, 1)
+#         self.pool2 = nn.MaxPool2d(1, 2)
+#         self.fc1 = nn.Linear(2560 + middle_input_size, 256)
+#         # self.dropout_linear1 = nn.Dropout2d(p=drop)
+#         self.fc2 = nn.Linear(256, 64)
+#         # self.dropout_linear2 = nn.Dropout2d(p=drop)
+#         self.fc3 = nn.Linear(64, output_size)
+#         # self.dropout_linear3 = nn.Dropout2d(p=drop)
+#
+#     def forward(self, x):
+#         x2 = x[:, 0, x.size(2) - 1, :]
+#         x1 = x[:, :, 0:x.size(2) - 1, :]
+#         x1 = F.relu(self.conv1(x1))
+#         x1 = F.relu(self.conv2(x1))
+#         x1 = self.pool1(x1)
+#         x1 = F.relu(self.conv3(x1))
+#         x1 = F.relu(self.conv4(x1))
+#         x1 = self.pool2(x1)
+#
+#         x1 = x1.view(-1, x1.size(1) * x1.size(2) * x1.size(3))
+#         x = torch.cat((x1, x2), -1)
+#
+#         x = F.relu(self.fc1(x))
+#         x = F.relu(self.fc2(x))
+#         x = F.sigmoid(self.fc3(x))
+#
+#         return x
 
 
 # save experience log
@@ -816,11 +817,11 @@ def run_exp_racos_for_synthetic_problem_analysis():
 
     opt_repeat = 10
 
-    dimension_size = 100
+    dimension_size = 10
     problem_name = 'sphere'
     problem_num = 2000
     start_index = 0
-    bias_region = 0.5
+    bias_region = 1
 
     dimension = Dimension()
     dimension.set_dimension_size(dimension_size)
