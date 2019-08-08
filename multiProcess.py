@@ -35,7 +35,7 @@ rand_probability = 0.99  # the probability of sample in model
 uncertain_bits = 2  # the dimension size that is sampled randomly
 
 start_index = 0
-problem_name = 'sphere'
+problem_name = 'sphere_group-sample'
 problem_num = 2000 - start_index
 
 repeat_num = 10
@@ -69,13 +69,19 @@ def synthetic_problems_sample(prob_i):
     running_log.append(
         problem_name + ': ' + str(start_index + prob_i) + ' ==============================================')
 
+    # bias setting
+    group_num = 10
+    group_size = problem_num / group_num
+    bias_step = bias_region / group_num
+    new_bias_region = int(prob_i / group_size) * bias_step
+
     # problem setting
-    func = DistributedFunction(dim=dimension, bias_region=[-bias_region, bias_region])
-    if problem_name == 'ackley':
+    func = DistributedFunction(dim=dimension, bias_region=[-new_bias_region, new_bias_region])
+    if 'ackley' in problem_name:
         prob_fct = func.DisAckley
-    elif problem_name == 'sphere':
+    elif 'sphere' in problem_name:
         prob_fct = func.DisSphere
-    elif problem_name == 'rosenbrock':
+    elif 'rosenbrock' in problem_name:
         prob_fct = func.DisRosenbrock
     else:
         print('Wrong Function!')
@@ -438,10 +444,12 @@ def run_exp_racos_for_synthetic_problem_analysis():
     target_bias = [0.1 for _ in range(dimension_size)]
     func.setBias(target_bias)
 
-    if problem_name == 'ackley':
+    if 'ackley' in problem_name:
         prob_fct = func.DisAckley
-    else:
+    elif 'sphere' in problem_name:
         prob_fct = func.DisSphere
+    elif 'rosenbrock' in problem_name:
+        prob_fct = func.DisRosenbrock
 
     relate_error_list = []
     net_ensemble = []
@@ -555,11 +563,11 @@ if __name__ == '__main__':
     #     p.apply_async(learning_data_construct, args=(i,))
     # p.close()
     # p.join()
-
-    p = Pool(12)
-    for i in range(problem_num):
-        p.apply_async(learning_exp, args=(i,))
-    p.close()
-    p.join()
+    #
+    # p = Pool(12)
+    # for i in range(problem_num):
+    #     p.apply_async(learning_exp, args=(i,))
+    # p.close()
+    # p.join()
 
     run_exp_racos_for_synthetic_problem_analysis()

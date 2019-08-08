@@ -2,17 +2,17 @@ from ExpAdaRacos import ExpAdaRacosOptimization, Experts
 import numpy as np
 from Components import Dimension
 from ObjectiveFunction import DistributedFunction
-from Tools import list2string, string2list
+from Tools import list2string
 import FileOperator as fo
 import time
 from Run_Racos import time_formulate
-import torch.nn as nn
-import torch.nn.functional as F
 import torch
 from Racos import RacosOptimization
 from ExpRacos import ExpRacosOptimization
-from ExpLearn import ImageNet
 import matplotlib.pyplot as plt
+import os
+
+os.environ["CUDA_VISIBLE_DEVICES"] = '1'
 
 path = '/data/ExpAdaptation'
 sample_size = 10  # the instance number of sampling in an iteration
@@ -24,9 +24,9 @@ adv_threshold = 10  # advance sample size
 dimension_size = 10
 opt_repeat = 10
 
-problem_name = 'sphere'
+problem_name = 'sphere_group-sample'
 bias_region = 1
-learner_name = 'sphere'
+learner_name = 'sphere_group-sample'
 start_index = 0
 learner_num = 2000
 step = 100
@@ -192,7 +192,7 @@ def run(type):
         elif type == 'ada':
             exp_racos = ExpAdaRacosOptimization(dimension, expert)
             opt_error = exp_racos.exp_ada_mix_opt(obj_fct=prob_fct, ss=sample_size, bud=budget, pn=positive_num,
-                                                  rp=rand_probability, ub=uncertain_bit, at=adv_threshold)
+                                                  rp=rand_probability, ub=uncertain_bit, at=adv_threshold, step=step)
         elif type == 'ground truth':
             exp_racos = ExpRacosOptimization(dimension, nets[:step])
             exp_racos.exp_mix_opt(obj_fct=prob_fct, ss=sample_size, bud=budget, pn=positive_num,
@@ -243,7 +243,7 @@ def run_no_expert():
 
     for i in range(opt_repeat):
         start_t = time.time()
-        racos.mix_opt(prob_fct, ss=sample_size, bud=500, pn=positive_num, rp=rand_probability,
+        racos.mix_opt(prob_fct, ss=sample_size, bud=budget, pn=positive_num, rp=rand_probability,
                       ub=uncertain_bit)
         end_t = time.time()
 
@@ -280,11 +280,11 @@ if __name__ == '__main__':
     target_bias = [0.1 for _ in range(dimension_size)]
     func.setBias(target_bias)
 
-    if problem_name == 'ackley':
+    if 'ackley' in problem_name:
         prob_fct = func.DisAckley
-    elif problem_name == 'sphere':
+    elif 'sphere' in problem_name:
         prob_fct = func.DisSphere
-    elif problem_name == 'rosenbrock':
+    elif 'rosenbrock' in problem_name:
         prob_fct = func.DisRosenbrock
     else:
         print('Wrong function!')
@@ -311,12 +311,12 @@ if __name__ == '__main__':
     opt_mean_ada, opt_std_ada = run('ada')
     opt_mean_ave, opt_std_ave = run('ave')
     opt_mean_ne, opt_std_ne = run_no_expert()
-    x = [i for i in range(len(opt_mean_ada))]
-    y0 = [opt_mean_ne for _ in range(len(opt_mean_ada))]
-    plt.plot(x, y0)
-    plt.plot(x, opt_mean_ada)
-    plt.plot(x, opt_mean_ave)
-    plt.show()
+    # x = [i for i in range(len(opt_mean_ada))]
+    # y0 = [opt_mean_ne for _ in range(len(opt_mean_ada))]
+    # plt.plot(x, y0)
+    # plt.plot(x, opt_mean_ada)
+    # plt.plot(x, opt_mean_ave)
+    # plt.show()
 
     print(
         'We got the final results for ' + problem_name + ' with ' + str(learner_num) + ' ' + learner_name + ' experts')
@@ -340,7 +340,7 @@ if __name__ == '__main__':
     result_path = path + '/Results/'
 
     optimization_log_file = result_path + 'opt-log-' + problem_name + '-with-' + str(
-        learner_num) + learner_name + '-budget' + str(budget) + '-budget-plot.txt'
+        learner_num) + learner_name + '-budget' + str(budget) + '-bias' + str(bias_region) + '.txt'
     print('optimization logging: ', optimization_log_file)
     fo.FileWriter(optimization_log_file, log_buffer, style='w')
 

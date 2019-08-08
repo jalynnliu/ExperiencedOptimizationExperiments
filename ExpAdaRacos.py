@@ -347,7 +347,7 @@ class ExpAdaRacosOptimization:
             ins = self.__pop[self.__sample_size - 1]
             k = self.__sample_size - 1
             while k > j:
-                self.__pos_pop[k] = self.__pos_pop[k - 1]
+                self.__pop[k] = self.__pop[k - 1]
                 k -= 1
             self.__pop[j] = temp
 
@@ -537,7 +537,7 @@ class ExpAdaRacosOptimization:
 
     # sequential Racos for mixed optimization
     # the dimension type includes float, integer and categorical
-    def exp_ada_mix_opt(self, obj_fct=None, ss=2, bud=20, pn=1, rp=0.95, ub=1, at=5):
+    def exp_ada_mix_opt(self, obj_fct=None, ss=2, bud=20, pn=1, rp=0.95, ub=1, at=5, step=1):
 
         sample_count = 0
         all_dist_count = 0
@@ -617,7 +617,6 @@ class ExpAdaRacosOptimization:
                 truth_label = 0
 
             t = np.array(prob_matrix)[:, max_index].T.tolist()
-            print(t)
             self.__expert.update_weights(np.array(prob_matrix)[:, max_index].T, truth_label, flag)
             flag = False
 
