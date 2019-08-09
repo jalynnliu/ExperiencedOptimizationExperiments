@@ -14,7 +14,7 @@ import torch.optim as optim
 import torch
 from ExpLearn import ImageNet
 
-path = '/home/amax/Desktop/ExpAdaptation'
+path = '/data/ExpAdaptation'
 
 
 class ExpContainer(object):
@@ -36,10 +36,10 @@ def get_predicotrs():
 
     if True:
 
-        problem_name = 'sphere'
+        problem_name = 'rosenbrock'
         dimension_size = 10
         bias_region = 0.5
-        learner_num = 2000
+        learner_num = 10
         start_index = 0
 
         learner_path = path+'/ExpLearner/SyntheticProbsLearner/' + problem_name + '/dimension' + str(dimension_size) \
@@ -94,7 +94,7 @@ def run_for_synthetic_problem():
     opt_repeat = 10
 
     dimension_size = 10
-    problem_name = 'sphere'
+    problem_name = 'rosenbrock'
     bias_region = 0.5
 
     eta = 0.9
