@@ -9,6 +9,7 @@ from Run_Racos import time_formulate
 import torch
 from Racos import RacosOptimization
 from ExpRacos import ExpRacosOptimization
+from ParamsHelper import ParamsHelper
 import matplotlib.pyplot as plt
 import os
 
@@ -269,10 +270,42 @@ def run_no_expert():
     return opt_mean, opt_std
 
 
-if __name__ == '__main__':
+def get_hyper_space():
+    hyper_space = {
+        'boosting': ('str', ('gbdt', 'rf', 'dart', 'doss')),
+        'num_thread': ('int', (1, 50)),
+        'application': ('str', ('regression', 'binary', 'multi-class', 'cross-entropy', 'lambdarank')),
+        'learning_rate': ('float', (1e-6, 0.1)),
+        'num_leaves': ('int', (2, 1000)),
+        'freature_fraction': ('float', (0, 1)),
+        'bagging_fraction': ('float', (0, 1)),
+        'bagging_freq': ('int', (1, 100)),
+        'lambda_l1': ('float', (0, 1)),
+        'lambda_l2': ('float', (0, 1))
+    }
+    return hyper_space
+
+def get_dimension(param_input):
+    '''
+    get dimension params by param input
+    :param param_input: params input
+    :return: dimension and the label coder
+    '''
     dimension = Dimension()
-    dimension.set_dimension_size(dimension_size)
-    dimension.set_regions([[-1.0, 1.0] for _ in range(dimension_size)], [0 for _ in range(dimension_size)])
+    label_coder = ParamsHelper()
+    region_array = []
+    dimension.set_dimension_size(len(param_input))
+    index = 0
+    for k, (type, obj) in param_input.items():
+        dimension.set_region(*label_coder.encode(type=type, index=index, key=k, objs=obj))
+        index = index + 1
+    return dimension, label_coder
+
+
+if __name__ == '__main__':
+    hyper_space=get_hyper_space()
+    dimension, sample_codec = get_dimension(hyper_space)
+    hyper_param = (sample_codec.sample_decode(x))
 
     # problem define
     func = DistributedFunction(dimension, bias_region=[-bias_region, bias_region])
