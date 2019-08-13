@@ -94,8 +94,6 @@ class Experts(object):
         return
 
 
-
-
 class ExpAdaRacosOptimization:
 
     def __init__(self, dimension, expert):
@@ -117,6 +115,8 @@ class ExpAdaRacosOptimization:
         self.__negative_set = []  # negative set used to modeling
         self.__new_ins = []  # new sample
         self.__sample_label = []  # the label of each sample
+        self.__sample_count = 0
+        self.__predicts = []
 
         self.__expert = expert
         self.__adv_threshold = 0
@@ -633,3 +633,74 @@ class ExpAdaRacosOptimization:
         # print 'average shrink times of each sample:', float(all_dist_count) / sample_count
 
         return res
+
+    def sample(self):
+
+        # initialization step
+        if self.__sample_count < self.__sample_size + self.__positive_num:
+            while True:
+                self.reset_model()
+                good_sample = self.random_instance(self.__dimension, self.__region, self.__label)
+                if self.instance_in_list(good_sample, self.__pop, self.__sample_count) is False:
+                    break
+        # optimization step
+        else:
+            adv_samples = []
+            adv_inputs = []
+            for i in range(self.__adv_threshold):
+                while True:
+                    self.reset_model()
+                    chosen_pos = self.__ro.get_uniform_integer(0, self.__positive_num - 1)
+                    model_sample = self.__ro.get_uniform_double(0.0, 1.0)
+                    if model_sample <= self.__rand_probability:
+                        dc = self.shrink_model(self.__pos_pop[chosen_pos], self.__pop)
+                    ins = self.pos_random_mix_isntance(self.__pos_pop[chosen_pos], self.__region, self.__label)
+                    if (self.instance_in_list(ins, self.__pos_pop, self.__positive_num) is False) and (
+                            self.instance_in_list(ins, self.__pop, self.__sample_size) is False):
+                        break
+                this_input = self.generate_inputs(self.__pos_pop[chosen_pos], ins)
+                adv_inputs.append(this_input)
+                adv_samples.append(ins)
+
+            probs, prob_matrix = self.__expert.predict(adv_inputs)
+            # print '------------------------------------------'
+            # print 'probs: ', probs
+            max_index = probs.index(max(probs))
+            # print 'max index: ', max_index
+            good_sample = adv_samples[max_index]
+            self.__predicts = np.array(prob_matrix)[:, max_index].T
+
+        return good_sample.get_features()
+
+    # x is a list, f_x is the evaluation value of x
+    def update_model(self, x, f_x):
+
+        ins = Instance(self.__dimension)
+        ins.set_features(x)
+        ins.set_fitness(f_x)
+
+        # initialization update
+        if self.__sample_count < self.__sample_size + self.__positive_num:
+            self.__pop.append(ins)
+        # optimization update
+        else:
+            if ins.get_fitness() < self.__optimal.get_fitness():
+                truth_label = 1
+            else:
+                truth_label = 0
+
+            self.__expert.update_weights(self.__predicts, truth_label)
+            self.online_update(ins)
+            self.update_optimal()
+
+        self.__sample_count += 1
+
+        # initialization process
+        if self.__sample_count == self.__sample_size + self.__positive_num:
+            self.__pop.sort(key=lambda instance: instance.get_fitness())
+            for i in range(self.__positive_num):
+                self.__pos_pop.append(self.__pop[0])
+                del self.__pop[0]
+            self.__optimal = self.__pos_pop[0].copy_instance()
+
+        return
