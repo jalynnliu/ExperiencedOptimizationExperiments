@@ -13,8 +13,11 @@ import torch.nn.functional as F
 import torch.optim as optim
 import torch
 from ExpLearn import ImageNet
+import os
 
-path = '/data/ExpAdaptation'
+os.environ["CUDA_VISIBLE_DEVICES"] = '1'
+
+path = '/home/amax/Desktop/ExpAdaptation/ExpAdaptation'
 
 
 class ExpContainer(object):
@@ -36,7 +39,7 @@ def get_predicotrs():
 
     if True:
 
-        problem_name = 'rosenbrock'
+        problem_name = 'sphere'
         dimension_size = 10
         bias_region = 0.5
         learner_num = 10
@@ -94,7 +97,7 @@ def run_for_synthetic_problem():
     opt_repeat = 10
 
     dimension_size = 10
-    problem_name = 'rosenbrock'
+    problem_name = 'sphere'
     bias_region = 0.5
 
     eta = 0.9

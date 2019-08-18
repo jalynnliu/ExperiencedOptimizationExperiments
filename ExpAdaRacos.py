@@ -208,6 +208,7 @@ class ExpAdaRacosOptimization:
         self.__pos_pop = []
         self.__optimal = None
         self.__expert.reset_weight()
+        self.__sample_count=0
         return
 
     # parameters setting

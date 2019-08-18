@@ -8,13 +8,15 @@ from Run_Racos import time_formulate
 import torch
 from Racos import RacosOptimization
 from ExpRacos import ExpRacosOptimization
+from ExpLearn import ImageNet
 from ParamsHelper import ParamsHelper
 import lightgbm as lgb
+from sklearn.metrics import f1_score
 import os
 
 os.environ["CUDA_VISIBLE_DEVICES"] = '1'
 
-path = '/data/ExpAdaptation'
+path = '/home/amax/yh/experiments/automl/automl/expracos'
 sample_size = 10  # the instance number of sampling in an iteration
 budget = 50  # budget in online style
 positive_num = 2  # the set size of PosPop
@@ -35,55 +37,31 @@ log_buffer = []
 
 class ExpContainer(object):
 
-    def __init__(self, prob_name='', prob_index=0, predictor=None, dist=0):
+    def __init__(self, prob_name='', prob_index=0, predictor=None):
         self.prob_name = prob_name
         self.prob_index = prob_index
         self.predictor = predictor
-        self.dist = dist
         return
 
 
 # loading predictors
 def get_predicotrs():
+    dataset_30 = "australian,breast,electricity,buggyCrx,cmc,contraceptive,credit-a,GAMETES_Epistasis_2-Way_1000atts_0,GAMETES_Epistasis_2-Way_20atts_0,GAMETES_Epistasis_3-Way_20atts_0,GAMETES_Heterogeneity_20atts_1600_Het_0,Hill_Valley_without_noise,Hill_Valley_with_noise,mfeat-karhunen,mfeat-morphological,mfeat-pixel,mfeat-zernike,monk2,parity5+5,pima,tic-tac-toe,tokyo1,vehicle,wine-quality-red,yeast,airlines,titanic,twonorm,glass,horse-colic,messidor".split(',')
     predictors = []
-    sort_q = []
     nets = []
+    print('Loading learner files...')
 
-    if True:
-        learner_path = path + '/ExpLearner/SyntheticProbsLearner/' + learner_name + '/dimension' + str(
-            dimension_size) \
-                       + '/DirectionalModel/' + 'learner-' + learner_name + '-' + 'dim' + str(dimension_size) + '-' \
-                       + 'bias' + str(bias_region) + '-'
-        bias_path = path + '/ExpLog/SyntheticProbsLog/' + learner_name + '/dimension' + str(dimension_size) \
-                    + '/RecordLog/' + 'bias-' + learner_name + '-' + 'dim' + str(dimension_size) + '-' \
-                    + 'bias' + str(bias_region) + '-'
+    for i, name in enumerate(dataset_30):
+        learner_path = path + '/ExpLearner/SyntheticProbsLearner/' + name + '/dimension10/DirectionalModel/'
+        learner_file=learner_path+os.listdir(learner_path)[0]
 
-        print('Loading learner files...')
+        this_learner = torch.load(learner_file)
+        nets.append(this_learner)
+        this_predictor = ExpContainer(prob_name=name, prob_index=start_index + i,
+                                      predictor=this_learner)
+        predictors.append(this_predictor)
 
-        for learner_i in range(learner_num):
-
-            learner_file = learner_path + str(start_index + learner_i) + '.pkl'
-            bias_file = bias_path + str(start_index + learner_i) + '.txt'
-
-            biases = open(bias_file).readline()
-            biases = biases.split(',')[1].split(' ')
-            dist = 0
-            for bias in biases:
-                dist += abs(float(bias) - 0.1)
-
-            this_learner = torch.load(learner_file)
-            nets.append(this_learner)
-            this_predictor = ExpContainer(prob_name=learner_name, prob_index=start_index + learner_i,
-                                          predictor=this_learner, dist=dist)
-            predictors.append(this_predictor)
-
-            sort_q.append((learner_i, dist))
-        sort_q.sort(key=lambda a: a[1])
-        index = [x[0] for x in sort_q]
-        predictors = np.array(predictors)[index].tolist()
-        nets = np.array(nets)[index].tolist()
-
-        print('Learner files loaded!')
+    print('Learner files loaded!')
 
     return predictors, nets
 
@@ -114,29 +92,35 @@ def run_for_synthetic_problem():
     log_buffer.append('uncertain bits: ' + str(uncertain_bit))
     log_buffer.append('advance num: ' + str(adv_threshold))
     log_buffer.append('+++++++++++++++++++++++++++++++')
-    log_buffer.append('problem parameters')
-    log_buffer.append('problem name: ' + problem_name)
-    log_buffer.append('+++++++++++++++++++++++++++++++')
 
-    predictors, load_buffer = get_predicotrs()
+    predictors, nets = get_predicotrs()
     expert = Experts(predictors=predictors, eta=eta)
-    log_buffer.extend(load_buffer)
+    test_10 = "adult,balance-scale,cnae,credit-g,crx,cylinder,flare,solar-flare_2,german".split(',')
 
     opt_error_list = []
 
-    for i in range(opt_repeat):
+    for i,problem_name in enumerate(test_10):
+        train_file=path+'/cache/'+problem_name+'/train.csv'
+        test_file=path+'/cache/'+problem_name+'/test.csv'
+        dtrain=np.loadtxt(train_file,delimiter=',')
+        dtest=np.loadtxt(test_file,delimiter=',')
+
         print('optimize ', i, '===================================================')
         log_buffer.append('optimize ' + str(i) + '===================================================')
 
         exp_racos = ExpAdaRacosOptimization(dimension, expert)
+        exp_racos.set_parameters(ss=sample_size,bud=budget,pn=positive_num,rp=rand_probability,ub=uncertain_bit,at=adv_threshold)
+        exp_racos.clear()
         start_t = time.time()
         x = exp_racos.sample()
         for i in range(budget):
             hyper_param = (sample_codec.sample_decode(x))
-
-            bst = lgb.train(hyper_param, dtrain, numround)
-            fitness = bst.predict(dtest)
-            exp_racos.update_optimal(x, fitness)
+            model=lgb.LGBMClassifier()
+            model.set_params(**hyper_param)
+            bst = model.fit(dtrain[:,:-1],dtrain[:,-1])
+            pred = bst.predict(dtest[:,:-1])
+            fitness=-f1_score(dtest[:,-1],pred,average='macro')
+            exp_racos.update_model(x, fitness)
             x = exp_racos.sample()
 
         end_t = time.time()
@@ -165,10 +149,9 @@ def run_for_synthetic_problem():
     log_buffer.append('--------------------------------------------------')
     log_buffer.append('optimization result: ' + str(opt_mean) + '#' + str(opt_std))
 
-    result_path = path + '/Results/Ada/' + problem_name + '/dimension' + str(dimension_size) + '/'
+    result_path =  '/home/amax/Desktop/Results/RealProbs/'
 
-    optimization_log_file = result_path + 'opt-log-' + problem_name + '-dim' + str(dimension_size) + '-bias' \
-                            + str(bias_region) + '.txt'
+    optimization_log_file = result_path + 'opt-log-ada-0.txt'
     print('optimization logging: ', optimization_log_file)
     fo.FileWriter(optimization_log_file, log_buffer, style='w')
 
@@ -177,16 +160,17 @@ def run_for_synthetic_problem():
 
 def get_hyper_space():
     hyper_space = {
-        'boosting': ('str', ('gbdt', 'rf', 'dart', 'doss')),
-        'num_thread': ('int', (1, 50)),
-        'application': ('str', ('regression', 'binary', 'multi-class', 'cross-entropy', 'lambdarank')),
+        'boosting_type': ('str', ('gbdt', 'rf', 'dart')),
         'learning_rate': ('float', (1e-6, 0.1)),
+        'n_estimators': ('int', (50, 100)),
         'num_leaves': ('int', (2, 1000)),
-        'freature_fraction': ('float', (0, 1)),
-        'bagging_fraction': ('float', (0, 1)),
-        'bagging_freq': ('int', (1, 100)),
-        'lambda_l1': ('float', (0, 1)),
-        'lambda_l2': ('float', (0, 1))
+        'colsample_bytree': ('float', (0, 1)),
+        'subsample': ('float', (0, 1)),
+        'subsample_freq': ('int', (1, 100)),
+        'reg_alpha': ('float', (0, 1)),
+        'reg_lambda': ('float', (0, 1)),
+        'min_child_weight': ('float', (0, 0.01)),
+        'min_child_samples': ('int', (10, 30)),
     }
     return hyper_space
 
@@ -209,9 +193,5 @@ def get_dimension(param_input):
 
 
 if __name__ == '__main__':
-    result_path = path + '/Results/'
+    run_for_synthetic_problem()
 
-    optimization_log_file = result_path + 'opt-log-' + problem_name + '-with-' + str(
-        learner_num) + learner_name + '-budget' + str(budget) + '-bias' + str(bias_region) + '.txt'
-    print('optimization logging: ', optimization_log_file)
-    fo.FileWriter(optimization_log_file, log_buffer, style='w')
