@@ -9,7 +9,7 @@ import math
 import copy
 import matplotlib.pyplot as plt
 
-step = 100
+step = 1
 
 
 class Experts(object):
@@ -27,6 +27,7 @@ class Experts(object):
     # return: w_probs - weighted sum predictions of predictors
     #         outputs - prediction matrix for inputs
     def predict(self, inputs):
+        step=int(len(self.predictors)/20)
 
         inputs = torch.from_numpy(np.array(inputs)).float()
         inputs = Variable(inputs.cuda())
@@ -60,7 +61,7 @@ class Experts(object):
         w_probs = np.array(outputs).T.dot(np.array(this_weights).T).tolist()
         return w_probs, outputs
 
-    def update_weights(self, predictions, label, flag):
+    def update_weights(self, predictions, label, flag=False):
         for i in range(len(self.weights)):
             self.weights[i] = self.weights[i] * math.exp(-self.eta * self.loss_function(predictions[i], label))
 
@@ -68,7 +69,7 @@ class Experts(object):
         # self.weights-=min(x)
         self.weights /= x.sum()
         # self.weights = self.weights.tolist()
-        if (flag and self.pic_count < (self.bg / 10)) or self.pic_count == 0:
+        if flag and (self.pic_count < (self.bg / 10) or self.pic_count == 0):
             if False:
                 index = [i * 2 + 1 for i in range(int(len(self.weights) / 2))]
                 plt.scatter(range(len(self.weights[index])), self.weights[index], c='red')
@@ -690,7 +691,7 @@ class ExpAdaRacosOptimization:
             else:
                 truth_label = 0
 
-            self.__expert.update_weights(self.__predicts, truth_label)
+            self.__expert.update_weights(self.__predicts, truth_label,False)
             self.online_update(ins)
             self.update_optimal()
 
