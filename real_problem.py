@@ -12,6 +12,8 @@ from ExpLearn import ImageNet
 from ParamsHelper import ParamsHelper
 import lightgbm as lgb
 from sklearn.metrics import f1_score
+from sklearn import preprocessing
+import pandas as pd
 import os
 
 os.environ["CUDA_VISIBLE_DEVICES"] = '1'
@@ -46,14 +48,15 @@ class ExpContainer(object):
 
 # loading predictors
 def get_predicotrs():
-    dataset_30 = "australian,breast,electricity,buggyCrx,cmc,contraceptive,credit-a,GAMETES_Epistasis_2-Way_1000atts_0,GAMETES_Epistasis_2-Way_20atts_0,GAMETES_Epistasis_3-Way_20atts_0,GAMETES_Heterogeneity_20atts_1600_Het_0,Hill_Valley_without_noise,Hill_Valley_with_noise,mfeat-karhunen,mfeat-morphological,mfeat-pixel,mfeat-zernike,monk2,parity5+5,pima,tic-tac-toe,tokyo1,vehicle,wine-quality-red,yeast,airlines,titanic,twonorm,glass,horse-colic,messidor".split(',')
+    dataset_30 = "australian,breast,electricity,buggyCrx,cmc,contraceptive,credit-a,GAMETES_Epistasis_2-Way_1000atts_0,GAMETES_Epistasis_2-Way_20atts_0,GAMETES_Epistasis_3-Way_20atts_0,GAMETES_Heterogeneity_20atts_1600_Het_0,Hill_Valley_without_noise,Hill_Valley_with_noise,mfeat-karhunen,mfeat-morphological,mfeat-pixel,mfeat-zernike,monk2,parity5+5,pima,tic-tac-toe,tokyo1,vehicle,wine-quality-red,yeast,airlines,titanic,twonorm,glass,horse-colic,messidor".split(
+        ',')
     predictors = []
     nets = []
     print('Loading learner files...')
 
     for i, name in enumerate(dataset_30):
-        learner_path = path + '/ExpLearner/SyntheticProbsLearner/' + name + '/dimension10/DirectionalModel/'
-        learner_file=learner_path+os.listdir(learner_path)[0]
+        learner_path = path + '/ExpLearner/SyntheticProbsLearner/' + name + '/dimension11/DirectionalModel/'
+        learner_file = learner_path + os.listdir(learner_path)[0]
 
         this_learner = torch.load(learner_file)
         nets.append(this_learner)
@@ -99,57 +102,64 @@ def run_for_synthetic_problem():
 
     opt_error_list = []
 
-    for i,problem_name in enumerate(test_10):
-        train_file=path+'/cache/'+problem_name+'/train.csv'
-        test_file=path+'/cache/'+problem_name+'/test.csv'
-        dtrain=np.loadtxt(train_file,delimiter=',')
-        dtest=np.loadtxt(test_file,delimiter=',')
+    for problem_name in test_10:
+        train_file = path + '/cache/' + problem_name + '/train.csv'
+        test_file = path + '/cache/' + problem_name + '/test.csv'
+        dtrain = pd.read_csv(train_file)
+        dtest = pd.read_csv(test_file)
+        dtrain=data_process(dtrain)
 
-        print('optimize ', i, '===================================================')
-        log_buffer.append('optimize ' + str(i) + '===================================================')
+        print('optimize ', problem_name, '===================================================')
+        log_buffer.append('optimize ' + problem_name + '===================================================')
 
-        exp_racos = ExpAdaRacosOptimization(dimension, expert)
-        exp_racos.set_parameters(ss=sample_size,bud=budget,pn=positive_num,rp=rand_probability,ub=uncertain_bit,at=adv_threshold)
-        exp_racos.clear()
-        start_t = time.time()
-        x = exp_racos.sample()
-        for i in range(budget):
-            hyper_param = (sample_codec.sample_decode(x))
-            model=lgb.LGBMClassifier()
-            model.set_params(**hyper_param)
-            bst = model.fit(dtrain[:,:-1],dtrain[:,-1])
-            pred = bst.predict(dtest[:,:-1])
-            fitness=-f1_score(dtest[:,-1],pred,average='macro')
-            exp_racos.update_model(x, fitness)
+        for j in range(opt_repeat):
+
+            exp_racos = ExpAdaRacosOptimization(dimension, expert)
+            exp_racos.set_parameters(ss=sample_size, bud=budget, pn=positive_num, rp=rand_probability, ub=uncertain_bit,
+                                     at=adv_threshold)
+            exp_racos.clear()
+            start_t = time.time()
             x = exp_racos.sample()
+            for i in range(budget):
+                if i % 10 == 0:
+                    # print '======================================================'
+                    print('budget ', i, ':', x.get_fitness())
+                hyper_param = (sample_codec.sample_decode(x))
+                model = lgb.LGBMClassifier()
+                model.set_params(**hyper_param)
+                bst = model.fit(dtrain[:, :-1], dtrain[:, -1])
+                pred = bst.predict(dtest[:, :-1])
+                fitness = -f1_score(dtest[:, -1], pred, average='macro')
+                exp_racos.update_model(x, fitness)
+                x = exp_racos.sample()
 
-        end_t = time.time()
+            end_t = time.time()
 
-        print('total budget is ', budget)
-        log_buffer.append('total budget is ' + str(budget))
+            print('total budget is ', budget)
+            log_buffer.append('total budget is ' + str(budget))
 
-        hour, minute, second = time_formulate(start_t, end_t)
-        print('spending time: ', hour, ':', minute, ':', second)
-        log_buffer.append('spending time: ' + str(hour) + '+' + str(minute) + '+' + str(second))
+            hour, minute, second = time_formulate(start_t, end_t)
+            print('spending time: ', hour, ':', minute, ':', second)
+            log_buffer.append('spending time: ' + str(hour) + '+' + str(minute) + '+' + str(second))
 
-        optimal = exp_racos.get_optimal()
-        opt_error = optimal.get_fitness()
-        optimal_x = optimal.get_features()
+            optimal = exp_racos.get_optimal()
+            opt_error = optimal.get_fitness()
+            optimal_x = optimal.get_features()
 
-        opt_error_list.append(opt_error)
-        print('validation optimal value: ', opt_error)
-        log_buffer.append('validation optimal value: ' + str(opt_error))
-        print('optimal x: ', optimal_x)
-        log_buffer.append('optimal nn structure: ' + list2string(optimal_x))
+            opt_error_list.append(opt_error)
+            print('validation optimal value: ', opt_error)
+            log_buffer.append('validation optimal value: ' + str(opt_error))
+            print('optimal x: ', optimal_x)
+            log_buffer.append('optimal nn structure: ' + list2string(optimal_x))
 
-    opt_mean = np.mean(np.array(opt_error_list))
-    opt_std = np.std(np.array(opt_error_list))
-    print('--------------------------------------------------')
-    print('optimization result: ', opt_mean, '#', opt_std)
-    log_buffer.append('--------------------------------------------------')
-    log_buffer.append('optimization result: ' + str(opt_mean) + '#' + str(opt_std))
+        opt_mean = np.mean(np.array(opt_error_list))
+        opt_std = np.std(np.array(opt_error_list))
+        print('--------------------------------------------------')
+        print('optimization result: ', opt_mean, '#', opt_std)
+        log_buffer.append('--------------------------------------------------')
+        log_buffer.append('optimization result: ' + str(opt_mean) + '#' + str(opt_std))
 
-    result_path =  '/home/amax/Desktop/Results/RealProbs/'
+    result_path = '/home/amax/Desktop/Results/RealProbs/'
 
     optimization_log_file = result_path + 'opt-log-ada-0.txt'
     print('optimization logging: ', optimization_log_file)
@@ -194,4 +204,3 @@ def get_dimension(param_input):
 
 if __name__ == '__main__':
     run_for_synthetic_problem()
-
