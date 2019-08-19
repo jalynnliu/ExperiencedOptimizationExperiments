@@ -1,0 +1,106 @@
+\begin{thebibliography}{10}
+\providecommand{\url}[1]{\texttt{#1}}
+\providecommand{\urlprefix}{URL }
+\providecommand{\doi}[1]{https://doi.org/#1}
+
+\bibitem{chen2019closer}
+Chen, W.Y., Liu, Y.C., Kira, Z., Wang, Y.C.F., Huang, J.B.: A closer look at
+  few-shot classification. arXiv preprint arXiv:1904.04232  (2019)
+
+\bibitem{cheny2019multi}
+Cheny, Z., Fuy, Y., Zhang, Y., Jiang, Y.G., Xue, X., Sigal, L.: Multi-level
+  semantic feature augmentation for one-shot learning. IEEE Transactions on
+  Image Processing  (2019)
+
+\bibitem{finn2017model}
+Finn, C., Abbeel, P., Levine, S.: Model-agnostic meta-learning for fast
+  adaptation of deep networks. In: Proceedings of the 34th International
+  Conference on Machine Learning-Volume 70. pp. 1126--1135. JMLR. org (2017)
+
+\bibitem{gidaris2018dynamic}
+Gidaris, S., Komodakis, N.: Dynamic few-shot visual learning without
+  forgetting. In: Proceedings of the IEEE Conference on Computer Vision and
+  Pattern Recognition. pp. 4367--4375 (2018)
+
+\bibitem{he2016deep}
+He, K., Zhang, X., Ren, S., Sun, J.: Deep residual learning for image
+  recognition. In: Proceedings of the IEEE conference on computer vision and
+  pattern recognition. pp. 770--778 (2016)
+
+\bibitem{ioffe2015batch}
+Ioffe, S., Szegedy, C.: Batch normalization: Accelerating deep network training
+  by reducing internal covariate shift. arXiv preprint arXiv:1502.03167  (2015)
+
+\bibitem{lecun2015deep}
+LeCun, Y., Bengio, Y., Hinton, G.: Deep learning. nature  \textbf{521}(7553),
+  ~436 (2015)
+
+\bibitem{li2019learning}
+Li, X., Wang, W.: Learning discriminative features via weights-biased softmax
+  loss. arXiv preprint arXiv:1904.11138  (2019)
+
+\bibitem{long2015fully}
+Long, J., Shelhamer, E., Darrell, T.: Fully convolutional networks for semantic
+  segmentation. In: Proceedings of the IEEE conference on computer vision and
+  pattern recognition. pp. 3431--3440 (2015)
+
+\bibitem{maaten2008visualizing}
+Maaten, L.v.d., Hinton, G.: Visualizing data using t-sne. Journal of machine
+  learning research  \textbf{9}(Nov),  2579--2605 (2008)
+
+\bibitem{mishra2017simple}
+Mishra, N., Rohaninejad, M., Chen, X., Abbeel, P.: A simple neural attentive
+  meta-learner. arXiv preprint arXiv:1707.03141  (2017)
+
+\bibitem{nichol2018first}
+Nichol, A., Achiam, J., Schulman, J.: On first-order meta-learning algorithms.
+  arXiv preprint arXiv:1803.02999  (2018)
+
+\bibitem{qin2019rethink}
+Qin, Y., Zhang, W., Zhao, C., Wang, Z., Shi, H., Qi, G., Shi, J., Lei, Z.:
+  Rethink and redesign meta learning. arXiv preprint arXiv:1812.04955  (2018)
+
+\bibitem{ronneberger2015u}
+Ronneberger, O., Fischer, P., Brox, T.: U-net: Convolutional networks for
+  biomedical image segmentation. In: International Conference on Medical image
+  computing and computer-assisted intervention. pp. 234--241. Springer (2015)
+
+\bibitem{russakovsky2015imagenet}
+Russakovsky, O., Deng, J., Su, H., Krause, J., Satheesh, S., Ma, S., Huang, Z.,
+  Karpathy, A., Khosla, A., Bernstein, M., et~al.: Imagenet large scale visual
+  recognition challenge. International journal of computer vision
+  \textbf{115}(3),  211--252 (2015)
+
+\bibitem{salimans2016weight}
+Salimans, T., Kingma, D.P.: Weight normalization: A simple reparameterization
+  to accelerate training of deep neural networks. In: Advances in Neural
+  Information Processing Systems. pp. 901--909 (2016)
+
+\bibitem{snell2017prototypical}
+Snell, J., Swersky, K., Zemel, R.: Prototypical networks for few-shot learning.
+  In: Advances in Neural Information Processing Systems. pp. 4077--4087 (2017)
+
+\bibitem{sun2018meta}
+Sun, Q., Liu, Y., Chua, T.S., Schiele, B.: Meta-transfer learning for few-shot
+  learning. arXiv preprint arXiv:1812.02391  (2018)
+
+\bibitem{sung2018learning}
+Sung, F., Yang, Y., Zhang, L., Xiang, T., Torr, P.H., Hospedales, T.M.:
+  Learning to compare: Relation network for few-shot learning. In: Proceedings
+  of the IEEE Conference on Computer Vision and Pattern Recognition. pp.
+  1199--1208 (2018)
+
+\bibitem{vinyals2016matching}
+Vinyals, O., Blundell, C., Lillicrap, T., Wierstra, D., et~al.: Matching
+  networks for one shot learning. In: Advances in neural information processing
+  systems. pp. 3630--3638 (2016)
+
+\bibitem{wah2011caltech}
+Wah, C., Branson, S., Welinder, P., Perona, P., Belongie, S.: The caltech-ucsd
+  birds-200-2011 dataset  (2011)
+
+\bibitem{zhang2017mixup}
+Zhang, H., Cisse, M., Dauphin, Y.N., Lopez-Paz, D.: mixup: Beyond empirical
+  risk minimization. arXiv preprint arXiv:1710.09412  (2017)
+
+\end{thebibliography}

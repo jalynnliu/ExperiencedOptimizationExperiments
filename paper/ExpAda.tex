@@ -1,0 +1,358 @@
+% This is samplepaper.tex, a sample chapter demonstrating the
+% LLNCS macro package for Springer Computer Science proceedings;
+% Version 2.20 of 2017/10/04
+%
+\documentclass[runningheads]{llncs}
+%
+\usepackage{graphicx}
+\usepackage{amsmath}
+\usepackage{amsfonts}
+\usepackage{multirow}
+\usepackage[linesnumbered,boxed,ruled,commentsnumbered]{algorithm2e}
+\usepackage{array}
+\usepackage{fixltx2e}
+\usepackage{url}
+\usepackage{hyperref}
+\usepackage{color}
+\usepackage{cite}
+\usepackage{subfigure}
+% Used for displaying a sample figure. If possible, figure files should
+% be included in EPS format.
+%
+% If you use the hyperref package, please uncomment the following line
+% to display URLs in blue roman font according to Springer's eBook style:
+% \renewcommand\UrlFont{\color{blue}\rmfamily}
+
+\begin{document}
+%
+\title{Only Image cosine Embedding for Few-shot learning}
+%
+% If the paper title is too long for the running head, you can set
+% an abbreviated paper title here
+%
+\author{Songyi Gao\inst{1}\orcidID{xxxx-xxxx-xxxx-xxxxx} \and
+Zelin Liu \thanks{Corresponding author} \inst{2}\orcidID{xxxx-xxxx-xxxx-xxxxx} \and \\
+Weijie Shen\inst{3}\orcidID{xxxx-xxxx-xxxx-xxxxx}}
+%
+\authorrunning{Songyi Gao, Zelin Liu, et al.}
+% First names are abbreviated in the running head.
+% If there are more than two authors, 'et al.' is used.
+%
+
+\institute{Nanjing University, Nanjing 210023, China\\
+\email{xxxxxxxx@gmail.com}\\
+\url{http://www.xxxxxx.com/gp/computer-science/lncs}}
+%
+\maketitle              % typeset the header of the contribution
+%
+\begin{abstract}
+    Few-shot learning in computer vision is a very challenging task. Many approaches have been proposed to tackle the few-shot learning problem. Meta learning, a method of learning to learn, is introduced into few-shot learning problem and has achieved pretty good results. But there is still a very big gap between the machine and our human in the few-shot learning tasks. We think it’s because the existing methods do not make full use of global knowledge(similar to the priori knowledge of human understanding of images)thus lacking a world view of the task. In other words, they focus too much on local information and neglect the whole task. In this paper, we rethink about the few-shot learning problem, and propose that we should make full use of global knowledge. Base datasets are used to obtain a mapping function between images and feature vectors, the images are embedded into a hypersphere in the manner of cosine embedding. By taking this mapping function as global knowledge, we train a classifier to classify the corresponding embedded vector of images. The experiment proved that our approach significantly outperforms both baseline models and previous state-of-the-art methods. It surpasses most existing methods in terms of flexibility, simplicity and accuracy. Codes are available at https://github.com/*******.
+\keywords{Few-shot learning,image classification,Global knowledge}
+\end{abstract}
+
+\section{Introduction}
+In recent years, deep learning has achieved great success in various visual tasks~\cite{he2016deep,lecun2015deep,long2015fully,ronneberger2015u}.In order to improve the effect of the model, more and more data are used for training, and the data set in ten thousand units seems to have become the standard of deep learning. However, data is expensive to obtain, and on some special tasks, data is not available. Therefore, it is very valuable and challenging to use deep learning to achieve better results in a small number of data sets.
+
+Few shot learning is a magic challenge for machine learning. The ability to quickly learn the unknown from the known is one of the most important human abilities. Human can rapidly learn the new categories from very few samples, because we can understand the images by the prior knowledge. Prior knowledge constitutes our knowledge of the world, it can also be seen as the overall cognition of the task in the learning task. So the premise of fast learning is the global understanding of the problem, that is, the global knowledge. Besides, our global knowledge is not going to change very dramatically when we learn new things. However, most of the existing few-shot learning method always use the novel labeled samples to update the parameters for the entire model. Although this seems to make the model more adaptable to the new task, it only retain relatively little global knowledge in practice. Such approach is easy to be overfitting because it learns a lot of local knowledge rather than global knowledge.
+
+One of the most popular developed few-shot learning strategies is to take a meta-learning perspective coupled with episodic trainings. Meta-learning seems to convey somewhat different meanings to different people, but most people would agree that the essence of meta-learning is learning to learn. Meta-learning is the science of systematically observing how different machine learning approaches perform on a wide range of learning tasks, and then learning from this experience, or meta-data, to solve new tasks much faster than otherwise possible. However, the existed meta learning approach has one drawback. They are over-fitting on the task. Usually, the meta learner must have predefined task settings, for example, the model trained on the 5-way 1-shot tasks or the 5-way 5-shot tasks. Model weights trained from different settings cannot be shared, which is very inefficient compared to humans. Human beings are capable of continuous learning, we have only one brain but we can handle all problems.
+
+In practice, we're not sure how big our task-size(K-shot,N-way) is, K and N can be any positive integer, and even sample size of different classes may not be equal. The common approach of existed meta-learning methods is to train a unique model for each set of tasks, it's a huge waste of resources. There are already some works focusing on the problem. SNAIL~\cite{mishra2017simple} trained a dynamic adaptive meta-learner by changing the k value in the train phase. And the AML~\cite{qin2019rethink} used the prior knowledge and the attention mechanism to solve the problem. But they still have some flaws.
+
+Towards these, we propose a new few-shot learning approach in this paper. Our approach uses cosine embedding to train a embedding network between images and feature vectors and use this embedding network as global knowledge. To classify samples belong to unseen classes, a classifier is generated by standard transfer learning. Experimental results show that our simple method has advantages over existing small sample learning in flexibility, simplicity and accuracy.
+
+The main contributions of our work are:
+
+1. We rethink about the few-shot learning problems and propose that the retention of global knowledge is very important.
+
+2. We exhibit our method which uses cosine distance embedding, the result surprisingly achieves state-of-the-art performance on several few-shot learning benchmarks.
+
+
+3. Based on our approach, some tricks are discussed to further improve performance, and we hope our work will bring new ideas to solve few-shot learning tasks. 
+
+\section{Background}
+Given sufficient training samples on seen classes(base set), few-shot learning aims to train a high-precision model using few training samples on the unseen classes(novel set). In the few-shot learning of image recognition, task is a base unit, which is represented as a N-way K-shot classification problem with N classes sampled from the novel set, and K+Q non-repeating samples sampled for each class. The N*K samples(support set) are used to train the classifier, the remaining N*Q samples(query set) are used to test the accuracy of the classifier. The base set can also be used to assist training classifier.
+
+Many important works on few-shot learning problems have been contributed. The successful MAML approach~\cite{finn2017model,nichol2018first} aims to meta-learn an initial condition that can be effectively fine-tuned in a few gradient-descent update steps. Similar to our work, the MatchingNet~\cite{vinyals2016matching} uses cosine similarity as distance metric to train the learner, and Euclidean distance metric is used by ProtoNet~\cite{snell2017prototypical}. The RelationNet~\cite{sung2018learning} approach by Sung et al. proposed a learnable similarity metric. The method in~\cite{gidaris2018dynamic} learns a weight generator to predict the novel class classifier using an attention based mechanism. The work~\cite{salimans2016weight} proposed a distance-based method by reducing intra-class variation.
+
+Our work draws on some existed ideas, the difference is that we consider the importance of global knowledge and make better use of global knowledge by improving feature embedding network. Details will be given in Section 3 and Section 4.
+
+\section{Methodology}
+Our method follows the standard transfer learning which consists of two steps: pre-training and fintune. In the pre-training phase, we first use base set to train a classifier, then remove the full connection layers, leaving only the convolution layers as images embedding function. In the fintune phase, we freeze convolutional layers parameters and initialize a new classifier by defining and initializing the full connection layer based on task settings. Here we consider freezed convolutional layer parameters as global knowledge. We use the support set to train the newly initialized classifier, and then test the classification accuracy on the query set.
+\subsection{Pre-Training Phase}
+Different from many few-shot learning methods which generate tasks by sampling in the training phase, our method use a CNN network as a feature extractor(randomly initialize network parameters), followed by a classifier $C$(removed the biased of the FC layer) from scratch by minimizing standard cross-entropy classification loss which use the training examples in the base set. What calls for special attention is that the classifier is only used in pre-training phase. Through the convolution layer, the image is mapped to a feature vector with dimension $d$. We hope to reduce intra-class variations of features and increase between-class variations of features, so the pre-training classifier is trained by a special method. Algorithm~\ref{alg1} summarizes the training process, Algorithm~\ref{alg2} presents how to train the specially classifier.
+
+In the train phase, we randomly initialize parameters of the entire network, and then apply weight-normalization~\cite{salimans2016weight} to the fully connected layer(line-1 in Algorithm 1). Weight normalization is a reparameterization that decouples the magnitude of a weight tensor from its direction. This replaces the parameter specified with two parameters: one specifies the magnitude and the other specifies direction. Through the convolutiion layers, the input image is encoded into a d-dimensional feature vectors(line4-5 in Algorithm 1). Now, we calculate the classification loss of the feature vector by Algorithm 2 to limit the prediction to the unit hypersphere. The feature vectors are L2 normalized(line3 in Algorithm 2). And we can write the weight matrix of the full connection layer $W_{b}$ as [$W_{1},W_{2},...,W_{c}$], where each class has a corresponding d-dimension weight vector $W_{i}$. The cosine similarity scores is obtained by matrix multiplication of image feature vectors and weight vectors that represent categories. We can get the probability of prediction for each category by normalizing the similarity score with a softmax function.
+\begin{equation}
+\label{equ1}
+W_{i}^{'}=\frac{\alpha W_{c}+W_{i}}{\left\|\alpha W_{c}+W_{i}\right\|},(i\neq c)
+\end{equation}
+
+To get a better embedding function which can reduce intra-class variation and increase inter-class separability, we use weights-biased softmax function~\cite{li2019learning}to take place of the oral softmax(line 2-4 in Algorithm 2) in the train phase, which encourages the probabilities of the negative classes as well as the increase of their loss thus making the feature distance smaller within the class and the margin larger between classes. For the feature vector of each sample, let $c$ be the index of positive classifier weight vector and $i$ be the index of negative classifier weight vector, the original weight matrix $W$ is converted to $W_{i}$ through Equation~\ref{equ1} where only the positive weight vector with true label $W_{c}$ is not transformed.
+
+Since the corresponding $W_{i}$ of each sample needs to be calculated separately, the cosine similarity scores of the entire batch sample have to be calculated iteratively. Obviously, this will increase training time. But fortunately, we can use the original softmax for inference.
+
+After we get the similarity scores between the weights-biased weight vector and the image vector(line5 in Algorithm 2), a softmax function is used to normalize the prediction probability for every class (line6 in Algorithm 2). Finally, after the whole batch loss was obtained using the cross entropy loss function(line7 in Algorithm 2), we update the weight of $B$ and $C$ with backpropagation algorithm(line7 in Algorithm 1).
+
+\begin{algorithm}[H]
+\label{alg1}
+\caption{Training Process}%算法名字
+\LinesNumbered %要求显示行号BF
+\KwIn{Train Dataset T; Batchsize B}%输入参数
+\KwOut{Feature extractor F, Classifier C}%输出
+Randomly initialize F and C, apply weight-normalization to the fully connected layer\;
+\For{epochs}{
+  \For{batch}{
+    sample batch image data I([$I_{1},I_{2},...,I_{B}$])\;
+    sample batch label Y([$y_{1},y_{2},...,y_{B}$])\;
+    extracting features X=B(I) as X=[$x_{1},x_{2},...,x_{B}$]\;
+    Algorithm2\;
+    update all parameters in B and C\;
+  }
+}
+\end{algorithm}
+% Algorithm2
+\begin{algorithm}[H]
+\label{alg2}
+\caption{Train special classifier}%算法名字
+\LinesNumbered %要求显示行号
+\KwIn{Batch Features vector X and label Y,Classifier C with weight matrix W = [$w_{1},w_{2},...,w_{C}$]}%输入参数
+\KwOut{The total classification loss}%输出
+Initialize total loss L $\longleftarrow$ 0\; %\;用于换行
+\For{$X_{i}$,$y_{i}$ in X,Y}{
+  Get the $X_{n}\leftarrow$ L2-normalization$(X_{i})$\;
+  Transform classifier weight matrix W by Equation1, get new weight matrix $W_{i}$\;
+  Calculate the similarity score $S_{i} \leftarrow W_{i}*X_{n}$\;
+  Get normalization the prediction probility with a softmax function\;
+  Use cross entropy loss to calculate batch loss $L_{i} \leftarrow CrossEntropy(S_{i},y_{i})$\;
+  $L \leftarrow L+L_{i}$\;
+}
+\end{algorithm}
+%%%%%%%%%修改到这里
+In the course of training, the classifer learns some weight vectors that represent each class. By reducing the loss, the cosine distance between feature vector and weight vector of corresponding category becomes shorter. We successfully embedded the images onto a unit hypersphere and improve the intra-class compactness and inter-class separability.
+\subsection{Fintune Phase}
+Go through the pre-training phase, a model embedding images on unit hyperspheres has been successfully constructed. We freeze the model as global knowledge and initializes a new classifier based on task settings(K-shot N-way), then train the new classifier using the fewer labeled samples(support set) by minimizing classification losses and test the trained classifier accuracy on the corresponding query set. Note that in the test phase, model uses the original Softmax has better performance than the one uses weights-biased softmax.
+
+\section{Experimental}
+\subsection{Dataset}
+We conduct few-shot learning experiments on MiniImageNet~\cite{vinyals2016matching}, which is widely used in recent works~\cite{mishra2017simple,qin2019rethink,finn2017model,vinyals2016matching,snell2017prototypical}. It is a subset of the ImageNet~\cite{russakovsky2015imagenet} that includecs 100 classes with 600 images for per class. Our work uses the follow-up setting provided by Chen\&Li~\cite{chen2019closer}, which is composed of randomly selected 64 base, 16 validation, and 20 novel classes. In addition to this, we also use CUB-200 dataset~\cite{wah2011caltech} which contains 200 classes and 11,788 images in total. Following the related work, we randomly split the dataset into 100 base, 50 validation, and 50 novel classes.
+\subsection{Implementation details}
+We consider three backbones: Conv-4, ResNet-10 and ResNet-18. Conv-4 consists of 3*3 convolutions and 64 filters, followed by a batch normalization~\cite{ioffe2015batch}, a ReLU Nonlinear activation layer and a 2*2 max-pooling. ResNet-12 and ResNet-18 is more popular in recent works~\cite{chen2019closer,cheny2019multi,sun2018meta}. It contains 4 residual blocks and each block has 3 convolution layers with 3*3 kernels. At the end of each residual block~\cite{he2016deep}, a 2*2 max-pooling layer is applied. The number of filters starts from 64 and is doubled every next block. During the pre-training, the SGD optimizer is employed and the initial learning rate is set to be 0.1. Then we adjust the learning rate to 0.01 and 0.001 respectively at the begining of the 100th and 200th epoch. In the fintune phase, we fixed the learning rate at 0.01 to train newly initialized classifier for 100 epochs on the support set.
+\subsection{Experiments on MiniImagenet and CUB-200 dataset}
+\subsubsection{Expermiments on minimagent:}
+Upon the MiniImagenet, we test the 3 backbone extractors, Conv4, ResNet10 and ResNet18, and compare these with other methods(few shot learning and meta learning). The comparison of the accuracy is reported in Table~\ref{tab1}. Only when we choose Conv-4 as backbone in the 5-way 1-shot task setting, the result of our approch is not the best, with the accuracy less than the ProtoNet and RelationNet. Our method outperforms the other works in all the other sets of tasks, e.g. using the resnet18 as backbone in the 5-way 1-shot and 5-way 5-shot task setting, the accuracy of our approach is 3\% higher than other works. And it turns out that using too shallow neural network and small input size for training limits the performance of almost all few-shot learning algorithms. When we use ResNet-10 replace the Conv-4 as backbone, the accuracy of all the methods has been improved, our approach improved an amazing 10 percent over other works. It can be seen that our method dependents more on the depth of the network and the input size than the others. The reason behinds this might be as the more input information and network parameters are given, the more global knowledge our algorithm can obtain.
+\begin{table}
+\caption{Few-shot classification accuracy on MiniImageNet. We validate our approach on the MiniImageNet dataset using three backbones(Conv4, ResNet10 and ResNet18). We use 84*84 input size when the backbone is Conv4, and use 224*224 input size in ResNet backbone. To be fair, some expermiments results come from~\cite{chen2019closer}, and we use the same image size training data with the same backbone. We use the approach proposed in~\cite{chen2019closer} as a baseline approach. The superscript “*” indicates that we use base and validation data for model training with a total of 80 classes.}\label{tab1}
+\centering
+\begin{tabular}{|l|l|l|l|}
+\hline
+Method  & BackBone & 1-shot & 5-shot\\
+\hline
+Matching-net  & Conv-4 & 44.42± 0.84 & 63.48 ± 0.66\\
+ProtoNet  & Conv-4 & 47.74±0.84 & 64.24 ± 0.72\\
+MAML  & Conv-4 & 46.67±0.82 & 62.71 ± 0.71\\
+RelationNet  & Conv-4 & \bfseries 49.31±0.85 & 66.60±0.71\\
+Basline  & Conv-4 & 48.24±0.75 & 66.43±0.63\\
+\bfseries Ours  & Conv-4 & 47.17±0.71 &\bfseries 67.04±0.65\\
+Matching-net  & ResNet-10 & 54.49±0.81 & 74.69±0.64\\
+ProtoNet & ResNet-10 & 51.98±0.84 & 72.64±0.64\\
+MAML  & ResNet-10 & 54.69±0.89 & 66.62±0.83\\
+RelationNet & ResNet-10 & 52.19±0.83 & 70.20±0.66\\
+Basline & ResNet-10 & 53.97±0.79 & 75.90±0.61\\
+\bfseries Ours & ResNet-10 & \bfseries 58.77±0.86 &\bfseries 78.39±0.62\\
+Matching-net & ResNet-18 & 52.91±0.77 & 68.88±0.69\\
+ProtoNet & ResNet-18 & 54.16±0.82 & 73.68±0.65\\
+MAML  & ResNet-18 & 49.61±0.92 & 65.72±0.77\\
+RelationNet & ResNet-18 & 52.48±0.86 & 69.83±0.68\\
+Basline  & ResNet-18 & 51.87±0.77 & 75.68±0.63\\
+\bfseries Ours & ResNet-18 & \bfseries 57.95±0.82 &\bfseries 79.10±0.57\\
+\bfseries Ours$^{*}$  & ResNet-18 & \bfseries 61.94±0.79 &\bfseries80.46±0.61\\
+\hline
+\end{tabular}
+\end{table}
+
+\begin{table}
+\caption{Few-shot classification results on CUB-200 dataset. ResNet-18 dosen't have feature enhancement; As the name suggests, ResNet-18+Gaussian Noise uses Gaussian Noise for feature enhancement; Resnet-18+DualTriNet uses the semantic information contained in the class name for feature enhancement.}\label{tab2}
+\centering
+\begin{tabular}{|l|l|l|l|l|}
+\hline
+Methods & 1-shot & 5-shot\\
+\hline
+ResNet-18 &66.54±0.53  &82.38±0.43\\
+ResNet-18+Gaussian Noise  &65.02±0.60 & 80.79±0.49\\
+ResNet-18+DualTriNet & \bfseries69.60±0.46 & 84.10±0.35\\
+\bfseries ResNet-18+Ours & 69.31±0.88 & \bfseries85.03±0.52\\
+\hline
+\end{tabular}
+\end{table}
+
+
+\subsubsection{Expermiments on CUB-200 dataset:}
+In order to prove that the feature vectors obtained by our method are more representative for the input images, we conducted an experiment on CUB-200 datasets. This dataset includes 200 fine-grained categories of birds. Each image is again resized to 84x84 pixels. We specifically chose the work of Cheny\&Fuy~\cite{cheny2019multi} as the baseline for comparison. Their method is similar to ours excepting that they use neural networks for additional enhancement of features. As in Table~\ref{tab2}, even though the ResNet-18+DualTriNet approach apply additional semantic information for feature enhancement, the performance of our approach is still very competitive.
+\subsubsection{Experiment with different K values on MiniImageNet:}
+To establish the impact of the sample size on our approach, we used resnet-18 as the backbone for detailed experiments. As shown in Fig~\ref{fig1}, the precision rate increases rapidly with the increase of K value(where N = 5,10,15,20, K = 1,2,3,5,8,10,15,20,30). When K exceeds 5, the increase speed of precision rate slows down. In the 5-way 30-shot task setting, our model achieved an accuracy of up to 88\%.
+\begin{figure}[htbp]
+ \centering
+ \subfigure[]
+ {
+  \begin{minipage}{5cm}
+   \centering
+   \includegraphics[scale=0.35]{64.png}
+  \end{minipage}
+ }
+    \subfigure[]
+    {
+     \begin{minipage}{5cm}
+      \centering
+      \includegraphics[scale=0.35]{80.png}
+     \end{minipage}
+    }
+\caption{(a) shows the model test results using only base set training data;(b) shows the result of using base and validation data for model training with a total of 80 classes.}
+\label{fig1}
+\end{figure}
+\subsubsection{Experiment with different $N$ values on MiniImageNet:}
+We also did experiment with a practical setting that handles different testing scenarios. Expermiments of N-way 5-shot are conducted to examine the effect of testing scenarios that are different from training, where $N$ $\to$ \{5,10,15,20\}. The results are shown in Table~\ref{tab3}. We compare our method with MathingNet, ProtoNet and RelationNet. All the methods shown in the table use same data and backbone for training. In our method, the model was only trained when a backbone was selected. The result of our method is adaptable to all kinds of experimental settings. We hold the opinion that there are two reasons for this. Firstly, our method is trained on the train set which consists of all the classes, and can capture the most important features between the novel classes since it's informed. What's more, our method is not as sensitive to $N$ values as other methods. In fact, our algorithm is the least affected by $N$ value compared with other methods.
+\begin{table}
+\caption{N-way 5-shot experiment. All methods use ResNet18 as backbone. The MatchingNet, ProtoNet and RelationNet use the 5-way 5-shot task setting in train phase.}\label{tab3}
+\centering
+\begin{tabular}{|l|l|l|l|l|}
+\hline
+Methods &  5-way & 10-way & 15-way & 20-way\\
+\hline
+Matching-net & 68.88±0.69 & 52.27±0.46 & - & 36.78±0.25\\
+ProtoNet & 73.68±0.65 & 59.22±0.44 & - & 44.96±0.26\\
+RelationNet & 69.83±0.68 & 53.88±0.48 & -  & 69.83±0.68\\
+\bfseries Ours & \bfseries79.10±0.57 & \bfseries62.64±0.44 & \bfseries 58.22±0.34 &\bfseries 52.63±0.26\\
+\bfseries Ours$^{*}$ & \bfseries80.46±0.61 & \bfseries66.80±0.43 & \bfseries 59.29±0.31 &\bfseries54.15±0.25\\
+\hline
+\end{tabular}
+\end{table}
+\subsubsection{Feature vectors analysis:}
+To understand how our method works,we reduce the feature vectors of novel class into a 2-dimension space with t-SNE~\cite{maaten2008visualizing} algorithm and visualize them on the Fig~\ref{fig2}. It is clear that our pre-trained embedding network has a strong generalization ability on unseen classes images. This generalization ability can also be understood as the ability to understand new images -- global knowledge.
+\subsection{Extended experiment}
+In this section, we introduce some tricks that can further improve the performance of our approach. As is shown before, our method has two parts, the first one is pre-train the Image-feature embedding network on the base datasets and the second is train a classfier on the support set from scratch. As a result, there are two ways to continue to improve the accuracy of the classifier. The first is to improve the embedding network, and the second is to optimize the classifier. We will introduce three methods to improve the performance of the algorithm in the following part.
+\subsubsection{Use mixup to augment the train data:}
+MixUp~\cite{zhang2017mixup} is a recently proposed data augmentation scheme, which linearly interpolates a random pair of training examples and correspondingly the one-hot representations of their labels. We want to be able to map the image into a good feature space, and by using mixup, the feature space gets smoother. We fix the $\lambda$to be 0.5. And in Equation~\ref{equ1}, $W_{i}$ becomes $0.5*(W_{1}+W_{2})$. The result in Tabel~\ref{tab4} shows it has an improvement of about 0.45\%.
+
+\begin{figure}[htbp]
+ \centering
+ \subfigure[]
+ {
+  \begin{minipage}{5cm}
+   \centering
+   \includegraphics[scale=0.35]{5-50.jpg}
+  \end{minipage}
+ }
+    \subfigure[]
+    {
+     \begin{minipage}{5cm}
+      \centering
+      \includegraphics[scale=0.35]{10-50.jpg}
+     \end{minipage}
+    }
+    \subfigure[]
+    {
+     \begin{minipage}{5cm}
+      \centering
+      \includegraphics[scale=0.35]{15-50.jpg}
+     \end{minipage}
+    }
+    \subfigure[]
+    {
+     \begin{minipage}{5cm}
+      \centering
+      \includegraphics[scale=0.35]{20-50.jpg}
+     \end{minipage}
+    }
+\caption{(a), (b), (c) and (d) randomly select 5, 10, 15 and 20 classes on the novel dataset of MiniImageNet, and each class randomly sampled 50 samples for feature visualization.}
+\label{fig2}
+\end{figure}
+
+\begin{figure}[h]%%图
+  \centering  %插入的图片居中表示
+  \includegraphics[width=0.7\linewidth]{delete.png}  %插入的图，包括JPG,PNG,PDF,EPS等，放在源文件目录下
+  \caption{Few-shot classification accuracy vs. remove the dimension of the feature. The task setting is 5-way 5-shot and backone is ResNet-18.we average the results over 10000 experiments.}  %图片的名称
+  \label{fig3}   %标签，用作引用
+\end{figure}
+
+\begin{table}
+\caption{extended experiment. The task setting is 5-way 5-shot and backone is ResNet-18.}\label{tab4}
+\centering
+\begin{tabular}{|l|l|}
+\hline
+Methods & Accuracy\\
+\hline
+Ours  &79.10±0.57\\
+Ours+mixup  &79.55±0.77\\
+Ours+Delete some feature & 79.31±0.60\\
+Ours+No weight-bias softmax &79.38±0.15\\
+Ours+all& 79.91±0.75\\
+\hline
+\end{tabular}
+\end{table}
+
+\subsubsection{Delete some features:}
+Since we find the feature dimensions we use is far exceeding the sample size of the support set, which is easy to overfit, we tried to train the classifier with partial features. Like the Fig~\ref{fig3} shows, the result is improved after we select some features and set them to zero. The feature selection mechanism is very simple. Firstly, train a new classfier on the support set and calculate the loss of support set. Then iteratively set one feature to zero and  calculate the difference between the new loss and loss in the first step. After traversing the features of all dimensions, we set the feature that cause the most loss reduce to zero and thus generate a new feature vector. Finally, repeate the process until a fixed number of features are zeroed. Fig~\ref{fig3} shows the relationship between the number of deleted features and model accuracy.
+\subsubsection{Don’t use the weights-biased softmax in the fintune phase:}
+After several experiments, we found an interesting phenomenon which indicates that the accuracy is upper when we use oral softmax in the fintune phase. To testify this phenomenon, we sampled 10000 tasks for statistics, the result shows in the Table~\ref{tab4}. We believe that the reason for this is that the supporting set samples are very few, thus the use of the weights-biased softmax becomes more likely to lead to model overfitting.
+
+\section{Conclusion}
+In this paper, we rethink about the few-shot learning problem and proposed the global knowledge which is crucial for solving few-shot learning task. We train a Image-Feature embedding network to imitate humans' understanding of images through prior knowledge. It turns out that our method is simple and effective. We hope our work will shed new light on the study of few-shot learning.
+
+
+\bibliographystyle{splncs04}
+\bibliography{OICEref}
+% \begin{thebibliography}{99}
+% \providecommand{\url}[1]{\texttt{#1}}
+% \providecommand{\urlprefix}{URL }
+% \providecommand{\doi}[1]{https://doi.org/#1}
+
+% \bibitem{DRLIR}
+%  He K , Zhang X , Ren S , et al. Deep Residual Learning for Image Recognition[J]. 2015.
+% \bibitem{LDFWS}
+%  Li X B , Wang W Q . Learning Discriminative Features Via Weights-biased Softmax Loss[J]. 2019.
+% \bibitem{SNAM}
+%  Mishra N , Rohaninejad M , Chen X , et al. A Simple Neural Attentive Meta-Learner[J]. 2017.
+% \bibitem{ref_article1}
+% Yunxiao Qin, Weiguo Zhang, Chenxu Zhao, et al.Rethink and Redesign Meta learning
+% \bibitem{ref_article1}
+% C. Finn, P. Abbeel, and S. Levine. Model-agnostic metalearning for fast adaptation of deep networks. In ICML,2017. 1, 2, 4, 5, 6
+% \bibitem{ref_article1}
+% O. Vinyals, C. Blundell, T. Lillicrap, K. Kavukcuoglu, and D. Wierstra. Matching Networks for One Shot Learning. Advances In Neural Information Processing Systems(NIPS), 2016. 1, 3
+% \bibitem{ref_article1}
+% J. Snell, K. Swersky, and R. S. Zemel. Prototypical Networks for Few-shot Learning. Advances In Neural Information Processing Systems (NIPS), 2017. 1, 3, 6
+% \bibitem{ref_article1}
+% Sung F, Yang Y, Zhang L, et al. Learning to compare: Relation network for few-shot learning[C]//Proceedings of the IEEE Conference on Computer Vision and Pattern Recognition. 2018: 1199-1208.
+% \bibitem{ref_article1}
+% Spyros Gidaris and Nikos Komodakis. Dynamic few-shot visual learning without forgetting. In
+% Proceedings of the IEEE Conference on Computer Vision and Pattern Recognition (CVPR), 2018.
+% \bibitem{ref_article1}
+% T. Salimans and D. Kingma. Weight normalization: A simple reparameterization to accelerate training of deep neural networks. In Advances in Neural Information Processing Systems, pages 901–909, 2016.
+% \bibitem{ref_article1}
+% Vinyals, O., Blundell, C., Lillicrap, T., Kavukcuoglu, K., Wierstra, D.:Matching networks for one shot learning. In: NIPS. (2016) II-A, II-C,IV-A, IV-C, IV-D, IV-D
+% \bibitem{ref_article1}
+% Chen W Y, Liu Y C, Kira Z, et al. A closer look at few-shot classification[J]. arXiv preprint arXiv:1904.04232, 2019.
+% \bibitem{ref_article1}
+% Catherine Wah, Steve Branson, Peter Welinder, Pietro Perona, and Serge Belongie. The caltech-ucsd birds-200-2011 dataset. 2011. 6
+% \bibitem{ref_article1}
+% Ioffe S, Szegedy C. Batch normalization: Accelerating deep network training by reducing internal covariate shift[J]. arXiv preprint arXiv:1502.03167, 2015.
+% \bibitem{ref_article1}
+% Cheny Z, Fuy Y, Zhang Y, et al. Multi-level Semantic Feature Augmentation for One-shot Learning[J]. IEEE Transactions on Image Processing, 2019.
+% \bibitem{ref_article1}
+% Sun Q, Liu Y, Chua T S, et al. Meta-Transfer Learning for Few-Shot Learning[J]. arXiv preprint arXiv:1812.02391, 2018.
+% \bibitem{ref_article1}
+% Cheny Z, Fuy Y, Zhang Y, et al. Multi-level Semantic Feature Augmentation for One-shot Learning[J]. IEEE Transactions on Image Processing, 2019.
+% \bibitem{ref_article1}
+% Maaten L J P V D , Hinton G E . Visualizing High-Dimensional Data using t-SNE[J]. Journal of Machine Learning Research, 2008, 9:2579-2605.
+% \bibitem{ref_article1}
+% Zhang H, Cisse M, Dauphin Y N, et al. mixup: Beyond Empirical Risk Minimization[J]. 2018.
+% \bibitem{ref_article1}
+% Olga Russakovsky, Jia Deng, Hao Su, et al. Imagenet large scale visual recognition challenge.IJCV, 2015
+% \bibitem{ref_article1}
+% L. Yann, B. Yoshua, and H. Geoffrey. Deep learning.Nature, 521(7553):436, 2015. 1
+% \bibitem{ref_article1}
+% E. Shelhamer, J. Long, and T. Darrell. Fully convolutional networks for semantic segmentation. IEEE Trans. Pattern Anal. Mach. Intell., 39(4):640–651,2017. 1
+
+% \end{thebibliography}
+
+\end{document}
