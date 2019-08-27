@@ -38,7 +38,7 @@ from sklearn.base import BaseEstimator, TransformerMixin
 from sklearn.preprocessing.label import _encode_python, _encode_numpy
 from sklearn.utils.validation import check_is_fitted, column_or_1d, _num_samples
 
-path = '/data/ExpAdaptation/RealProbsData/'
+path = '/home/amax/yh/experiments/automl/automl/expracos'
 
 
 # used for generating number randomly
@@ -267,21 +267,16 @@ class BenchmarkHelper():
         :return:
         '''
         self.dataset_name = dataset_name
-        train_dir = path + dataset_name + '/opt_train.csv'
-        test_dir = path + dataset_name + '/test.csv'
-        val_dir = path + dataset_name + '/opt_val.csv'
+        train_dir = path + '/cache/' + dataset_name + '/train.csv'
+        test_dir = path + '/cache/' + dataset_name + '/test.csv'
 
         train_data = self.read_csv(train_dir)
         test_data = self.read_csv(test_dir)
-        val_data = self.read_csv(val_dir)
         assert len(train_data) > 0, "train data must be greater than zero"
-        self.train_X, self.test_X, self.train_Y, self.test_Y, self.val_X, self.val_y = train_data[:, 0:-1], test_data[:,
-                                                                                                            0:-1], \
-                                                                                       train_data[:, -1], test_data[:,
-                                                                                                          -1], \
-                                                                                       val_data[:, :-1], val_data[:, -1]
+        self.train_X, self.test_X, self.train_Y, self.test_Y = train_data[:, 0:-1], test_data[:, 0:-1], \
+                                                               train_data[:, -1], test_data[:, -1]
 
-        return self.train_X, self.test_X, self.train_Y, self.test_Y, self.val_X, self.val_y
+        return self.train_X, self.test_X, self.train_Y, self.test_Y
 
     ## remove the empty array in the features array
     def remove_empty_str_array(self, features):
@@ -298,10 +293,10 @@ class BenchmarkHelper():
         :param miss_fun_hdl: the function used to handler missing value
         :return:
         '''
-        feature_dir = path + dataset_name + '/features.csv'
+        feature_dir = path + '/cache/' + dataset_name + '/features.csv'
         self.features = self.read_csv(feature_dir)
         features = self.remove_empty_str_array(self.features)
-        train_X, test_X, train_Y, test_Y, val_X, val_Y = self.fetch_data(dataset_name)
+        train_X, test_X, train_Y, test_Y = self.fetch_data(dataset_name)
         ## here is code handling miss value
         if miss_fun_hdl is not None:
             train_X, test_X = miss_fun_hdl(train_X, test_X)
@@ -309,14 +304,11 @@ class BenchmarkHelper():
         label_pipeline = self.get_label_pipeline()
         train_Y = self.get_transformed_data(label_pipeline, train_Y.reshape((-1, 1)))
         test_Y = self.get_transformed_data(label_pipeline, test_Y.reshape((-1, 1)))
-        val_Y = self.get_transformed_data(label_pipeline, val_Y.reshape((-1, 1)))
         train_X = self.get_transformed_data(feature_unions, train_X)
         test_X = self.get_transformed_data(feature_unions, test_X)
-        val_X = self.get_transformed_data(feature_unions, val_X)
         self.train = np.concatenate((train_X, train_Y), axis=1)
         self.test = np.concatenate((test_X, test_Y), axis=1)
-        self.val = np.concatenate((val_X, val_Y), axis=1)
-        return self.train, self.test, self.val
+        return self.train, self.test
 
     def get_number_selector(self, feature_names):
         def get_key_by_feature_name(feature_name):
