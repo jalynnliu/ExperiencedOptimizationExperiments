@@ -409,7 +409,7 @@ class RacosOptimization:
         budget_c = self.__sample_size + self.__positive_num
         while budget_c < self.__budget:
             budget_c += 1
-            if budget_c % 1000 == 0:
+            if budget_c % 10 == 0:
                 # print '======================================================'
                 print( 'budget ', budget_c, ':', self.__optimal.get_fitness())
                 # self.__optimal.show_instance()
