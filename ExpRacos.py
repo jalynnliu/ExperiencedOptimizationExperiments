@@ -448,7 +448,7 @@ class ExpRacosOptimization:
 
         sample_count = 0
         all_dist_count = 0
-        res = []
+        log_buffer = []
 
         # initialize sample set
         self.clear()
@@ -467,10 +467,10 @@ class ExpRacosOptimization:
         budget_c = self.__sample_size + self.__positive_num
         while budget_c < self.__budget:
             budget_c += 1
-            res.append(self.__optimal.get_fitness())
             if budget_c % 10 == 0:
                 # print '======================================================'
                 print('budget ', budget_c, ':', self.__optimal.get_fitness())
+                log_buffer.append('budget ' + str(budget_c) + ':' + str(self.__optimal.get_fitness()))
                 # self.__optimal.show_instance()
             adv_samples = []
             adv_inputs = []
@@ -525,7 +525,7 @@ class ExpRacosOptimization:
             self.update_optimal()
         # print 'average sample times of each sample:', float(sample_count) / self.__budget
         # print 'average shrink times of each sample:', float(all_dist_count) / sample_count
-        return res
+        return log_buffer
 
     def exp_mix_opt_for_function(self, obj_fct=None, ss=2, bud=20, pn=1, rp=0.95, ub=1, at=5):
 

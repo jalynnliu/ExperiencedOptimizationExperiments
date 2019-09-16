@@ -7,6 +7,7 @@ import time
 import pickle
 import FileOperator as fo
 
+path = './'
 
 # save experience log
 def save_log(pos_set, neg_set, new_set, label_set, file_name):
@@ -21,7 +22,6 @@ def save_log(pos_set, neg_set, new_set, label_set, file_name):
 
 # load experience log
 def read_log(file_name):
-
     f = open(file_name, 'rb')
     pos_set = pickle.load(f)
     neg_set = pickle.load(f)
@@ -33,23 +33,19 @@ def read_log(file_name):
 
 
 # experience sample
-def synthetic_probems_sample():
-
-    sample_size = 10             # the instance number of sampling in an iteration
-    budget = 500                # budget in online style
-    positive_num = 2             # the set size of PosPop
-    rand_probability = 0.99      # the probability of sample in model
-    uncertain_bits = 2           # the dimension size that is sampled randomly
+def synthetic_problems_sample(budget=500, problem_name='sphere', problem_size=5, max_bias=0.5, bias_step=0):
+    sample_size = 10  # the instance number of sampling in an iteration
+    positive_num = 2  # the set size of PosPop
+    rand_probability = 0.99  # the probability of sample in model
+    uncertain_bits = 2  # the dimension size that is sampled randomly
 
     start_index = 0
-    problem_size = 5
-    problem_name = 'sphere'
 
     repeat_num = 10
 
-    exp_path = './ExpLog/SyntheticProbsLog/'
+    exp_path = path + '/ExpLog/SyntheticProbsLog/'
 
-    bias_region = [-0.5, 0.5]
+    bias = 0
 
     dimension_size = 10
 
@@ -57,7 +53,15 @@ def synthetic_probems_sample():
     dimension.set_dimension_size(dimension_size)
     dimension.set_regions([[-1.0, 1.0] for _ in range(dimension_size)], [0 for _ in range(dimension_size)])
 
+    if bias_step > 0:
+        problem_name += '_group-sample'
+
     for prob_i in range(problem_size):
+
+        if bias_step > 0 and prob_i % (problem_size / max_bias * bias_step) == 0:
+            bias += bias_step
+        else:
+            bias = max_bias
 
         # bias log format: 'index,bias_list: dim1 dim2 dim3...'
         bias_log = []
@@ -69,19 +73,26 @@ def synthetic_probems_sample():
         running_log.append('rand_probability: ' + str(rand_probability))
         running_log.append('uncertain_bits: ' + str(uncertain_bits))
         running_log.append('budget: ' + str(budget))
+        running_log.append('group sample step: ' + str(bias_step))
         running_log.append('+++++++++++++++++++++++++++++++++')
 
         print(problem_name, ': ', start_index + prob_i, ' ==============================================')
-        running_log.append(problem_name + ': ' + str(start_index + prob_i) + ' ==============================================')
+        running_log.append(
+            problem_name + ': ' + str(start_index + prob_i) + ' ==============================================')
 
         # problem setting
-        func = DistributedFunction(dim=dimension, bias_region=bias_region)
-        if problem_name == 'ackley':
+        func = DistributedFunction(dim=dimension, bias_region=[-bias, bias])
+        if 'ackley' in problem_name:
             prob = func.DisAckley
-        else:
+        elif 'sphere' in problem_name:
             prob = func.DisSphere
+        elif 'rosenbrock' in problem_name:
+            prob = func.DisRosenbrock
+        else:
+            print('Wrong function!')
+            return
 
-        # bias log
+            # bias log
         bias_log.append(str(prob_i) + ',' + list2string(func.getBias()))
         print('function: ', problem_name, ', this bias: ', func.getBias())
         running_log.append('function: ' + problem_name + ', this bias: ' + list2string(func.getBias()))
@@ -100,14 +111,15 @@ def synthetic_probems_sample():
 
             # optimization process
             start_t = time.time()
-            optimizer.mix_opt(obj_fct=prob, ss=sample_size, bud=budget, pn=positive_num, rp=rand_probability, ub=uncertain_bits)
+            optimizer.mix_opt(obj_fct=prob, ss=sample_size, bud=budget, pn=positive_num, rp=rand_probability,
+                              ub=uncertain_bits)
             end_t = time.time()
             hour, minute, second = time_formulate(start_t, end_t)
 
             # optimization results
             optimal = optimizer.get_optimal()
             print('optimal v: ', optimal.get_fitness(), ' - ', optimal.get_features())
-            running_log.append('optimal v: '+ str(optimal.get_fitness()) + ' - ' + list2string(optimal.get_features()))
+            running_log.append('optimal v: ' + str(optimal.get_fitness()) + ' - ' + list2string(optimal.get_features()))
             print('spent time: ', hour, ':', minute, ':', second)
             running_log.append('spent time: ' + str(hour) + ':' + str(minute) + ':' + str(second))
 
@@ -123,21 +135,21 @@ def synthetic_probems_sample():
             label_set.extend(this_label)
         print('----------------------------------------------')
         print('sample finish!')
-        print('all sample number: ', len(positive_set), '-', len(negative_set), '-', len(new_sample_set),\
-            '-', len(label_set))
+        print('all sample number: ', len(positive_set), '-', len(negative_set), '-', len(new_sample_set), \
+              '-', len(label_set))
         running_log.append('----------------------------------------------')
         running_log.append('all sample number: ' + str(len(positive_set)) + '-' + str(len(negative_set)) + '-'
                            + str(len(new_sample_set)) + '-' + str(len(label_set)))
 
-        data_log_file = exp_path + str(problem_name) + '/dimension' + str(dimension_size) + '/DataLog/' +\
-                        'data-' + problem_name + '-' + 'dim' + str(dimension_size) + '-' + 'bias'\
-                        + str(bias_region[1]) + '-' +str(start_index + prob_i) + '.pkl'
-        bias_log_file = exp_path + str(problem_name) + '/dimension' + str(dimension_size) + '/RecordLog/' + 'bias-'\
-                        + problem_name + '-' + 'dim' + str(dimension_size) + '-' + 'bias' + str(bias_region[1])\
-                        + '-' +str(start_index + prob_i) + '.txt'
-        running_log_file = exp_path + str(problem_name) + '/dimension' + str(dimension_size) + '/RecordLog/' +\
-                           'running-' + problem_name + '-' + 'dim' + str(dimension_size) + '-' + 'bias'\
-                           + str(bias_region[1]) + '-' +str(start_index + prob_i) + '.txt'
+        data_log_file = exp_path + str(problem_name) + '/dimension' + str(dimension_size) + '/DataLog/' + \
+                        'data-' + problem_name + '-' + 'dim' + str(dimension_size) + '-' + 'bias' \
+                        + str(bias) + '-' + str(start_index + prob_i) + '.pkl'
+        bias_log_file = exp_path + str(problem_name) + '/dimension' + str(dimension_size) + '/RecordLog/' + 'bias-' \
+                        + problem_name + '-' + 'dim' + str(dimension_size) + '-' + 'bias' + str(bias) \
+                        + '-' + str(start_index + prob_i) + '.txt'
+        running_log_file = exp_path + str(problem_name) + '/dimension' + str(dimension_size) + '/RecordLog/' + \
+                           'running-' + problem_name + '-' + 'dim' + str(dimension_size) + '-' + 'bias' \
+                           + str(bias) + '-' + str(start_index + prob_i) + '.txt'
 
         print('data logging: ', data_log_file)
         running_log.append('data log path: ' + data_log_file)
@@ -154,5 +166,4 @@ def synthetic_probems_sample():
 
 
 if __name__ == '__main__':
-
-    synthetic_probems_sample()
+    synthetic_problems_sample()

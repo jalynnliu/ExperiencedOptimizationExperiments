@@ -2,22 +2,17 @@ from ExpAdaRacos import ExpAdaRacosOptimization, Experts
 import numpy as np
 from Components import Dimension
 from ObjectiveFunction import DistributedFunction
-import torch
-from Tools import list2string, string2list
+from Tools import list2string
 import FileOperator as fo
 import time
 from Run_Racos import time_formulate
-from torch.autograd import Variable
-import torch.nn as nn
-import torch.nn.functional as F
-import torch.optim as optim
 import torch
 from ExpLearn import ImageNet
 import os
 
 os.environ["CUDA_VISIBLE_DEVICES"] = '1'
 
-path = '/home/amax/Desktop/ExpAdaptation/ExpAdaptation'
+path = '/data/ExpAdaptation'
 
 
 class ExpContainer(object):
@@ -42,7 +37,7 @@ def get_predicotrs():
         problem_name = 'sphere'
         dimension_size = 10
         bias_region = 0.5
-        learner_num = 10
+        learner_num = 2000
         start_index = 0
 
         learner_path = path+'/ExpLearner/SyntheticProbsLearner/' + problem_name + '/dimension' + str(dimension_size) \
@@ -101,6 +96,7 @@ def run_for_synthetic_problem():
     bias_region = 0.5
 
     eta = 0.9
+    step = 100
 
     dimension = Dimension()
     dimension.set_dimension_size(dimension_size)
@@ -110,7 +106,7 @@ def run_for_synthetic_problem():
 
     # problem define
     func = DistributedFunction(dimension, bias_region = [-0.5, 0.5])
-    target_bias = [0.1 for _ in range(dimension_size)]
+    target_bias = [0.2 for _ in range(dimension_size)]
     func.setBias(target_bias)
 
     if problem_name == 'ackley':
@@ -134,7 +130,7 @@ def run_for_synthetic_problem():
     log_buffer.append('+++++++++++++++++++++++++++++++')
 
     predictors, load_buffer = get_predicotrs()
-    expert = Experts(predictors=predictors, eta=eta)
+    expert = Experts(predictors=predictors, eta=eta, step=step)
     log_buffer.extend(load_buffer)
 
     opt_error_list = []

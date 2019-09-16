@@ -9,6 +9,7 @@ from Run_Racos import time_formulate
 import torch
 from Racos import RacosOptimization
 from ExpRacos import ExpRacosOptimization
+from ExpLearn import ImageNet
 import matplotlib.pyplot as plt
 import os
 
@@ -24,9 +25,9 @@ adv_threshold = 10  # advance sample size
 dimension_size = 10
 opt_repeat = 10
 
-problem_name = 'sphere_group-sample'
-bias_region = 1
-learner_name = 'sphere_group-sample'
+problem_name = 'rosenbrock'
+bias_region = 0.5
+learner_name = 'sphere'
 start_index = 0
 learner_num = 2000
 step = 100
@@ -115,8 +116,9 @@ def get_mixed_predicotrs():
         predictor = []
 
         for i in range(10):
-            predictor += predictors[i * 2 * step:i * 2 * step + step]
             predictor += predictors[i * step + 2000:i * step + step + 2000]
+            predictor += predictors[i * 2 * step:i * 2 * step + step]
+
 
         print('Learner files loaded!')
 
@@ -273,11 +275,11 @@ def run_no_expert():
 if __name__ == '__main__':
     dimension = Dimension()
     dimension.set_dimension_size(dimension_size)
-    dimension.set_regions([[-1.0, 1.0] for _ in range(dimension_size)], [0 for _ in range(dimension_size)])
+    dimension.set_regions([[-0.5, 0.5] for _ in range(dimension_size)], [0 for _ in range(dimension_size)])
 
     # problem define
     func = DistributedFunction(dimension, bias_region=[-bias_region, bias_region])
-    target_bias = [0.1 for _ in range(dimension_size)]
+    target_bias = [0.4 for _ in range(dimension_size)]
     func.setBias(target_bias)
 
     if 'ackley' in problem_name:
@@ -305,18 +307,18 @@ if __name__ == '__main__':
     log_buffer.append('bias: ' + list2string(target_bias))
     log_buffer.append('+++++++++++++++++++++++++++++++')
 
-    predictors, nets = get_predicotrs()
+    predictors, nets = get_mixed_predicotrs()
 
     opt_mean_gt, opt_std_gt = run('ground truth')
     opt_mean_ada, opt_std_ada = run('ada')
     opt_mean_ave, opt_std_ave = run('ave')
     opt_mean_ne, opt_std_ne = run_no_expert()
-    # x = [i for i in range(len(opt_mean_ada))]
-    # y0 = [opt_mean_ne for _ in range(len(opt_mean_ada))]
-    # plt.plot(x, y0)
-    # plt.plot(x, opt_mean_ada)
-    # plt.plot(x, opt_mean_ave)
-    # plt.show()
+    x = [i for i in range(len(opt_mean_ada))]
+    y0 = [opt_mean_ne for _ in range(len(opt_mean_ada))]
+    plt.plot(x, y0)
+    plt.plot(x, opt_mean_ada)
+    plt.plot(x, opt_mean_ave)
+    plt.show()
 
     print(
         'We got the final results for ' + problem_name + ' with ' + str(learner_num) + ' ' + learner_name + ' experts')
@@ -337,7 +339,7 @@ if __name__ == '__main__':
         'optimization result for no experts pure Racos: ' + str(opt_mean_ne) + ', standard variance is: ' + str(
             opt_std_ne))
 
-    result_path = path + '/Results/'
+    result_path = path + '/Results/ExperimentThree/'
 
     optimization_log_file = result_path + 'opt-log-' + problem_name + '-with-' + str(
         learner_num) + learner_name + '-budget' + str(budget) + '-bias' + str(bias_region) + '.txt'

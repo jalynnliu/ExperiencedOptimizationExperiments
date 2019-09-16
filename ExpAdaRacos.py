@@ -9,25 +9,23 @@ import math
 import copy
 import matplotlib.pyplot as plt
 
-step = 1
-
 
 class Experts(object):
 
-    def __init__(self, predictors=None, eta=0.9, bg=50):
+    def __init__(self, predictors=None, eta=0.5, step=100):
 
         self.predictors = predictors
         self.weights = []
         self.eta = eta
         self.pic_count = 0
-        self.bg = bg
+        self.step = step
         return
 
     # prediction for each input
     # return: w_probs - weighted sum predictions of predictors
     #         outputs - prediction matrix for inputs
     def predict(self, inputs):
-        step=int(len(self.predictors)/20)
+        #        step=int(len(self.predictors)/20)
 
         inputs = torch.from_numpy(np.array(inputs)).float()
         inputs = Variable(inputs.cuda())
@@ -48,7 +46,7 @@ class Experts(object):
             # print 'out list: ', output
 
             y.append(output)
-            if (i + 1) % step == 0:
+            if (i + 1) % self.step == 0:
                 outputs.append(np.mean(np.array(y), axis=0))
                 y = []
         # outputs = np.array(outputs)
@@ -61,7 +59,7 @@ class Experts(object):
         w_probs = np.array(outputs).T.dot(np.array(this_weights).T).tolist()
         return w_probs, outputs
 
-    def update_weights(self, predictions, label, flag=False):
+    def update_weights(self, predictions, label):
         for i in range(len(self.weights)):
             self.weights[i] = self.weights[i] * math.exp(-self.eta * self.loss_function(predictions[i], label))
 
@@ -69,25 +67,14 @@ class Experts(object):
         # self.weights-=min(x)
         self.weights /= x.sum()
         # self.weights = self.weights.tolist()
-        if flag and (self.pic_count < (self.bg / 10) or self.pic_count == 0):
-            if False:
-                index = [i * 2 + 1 for i in range(int(len(self.weights) / 2))]
-                plt.scatter(range(len(self.weights[index])), self.weights[index], c='red')
-                plt.scatter(range(len(self.weights[[i * 2 for i in range(int(len(self.weights) / 2))]])),
-                            self.weights[[i * 2 for i in range(int(len(self.weights) / 2))]], c='blue')
-            else:
-                plt.scatter(range(len(self.weights)), self.weights)
-            plt.show()
-            self.pic_count += 1
-            print(self.weights)
 
-        return
+        return self.weights
 
     def loss_function(self, prediction, label):
         return (label - prediction) * (label - prediction)
 
     def reset_weight(self):
-        self.weights = [step / len(self.predictors) for _ in range(int(len(self.predictors) / step))]
+        self.weights = [self.step / len(self.predictors) for _ in range(int(len(self.predictors) / self.step))]
         return
 
     def delete_predictors(self):
@@ -209,7 +196,7 @@ class ExpAdaRacosOptimization:
         self.__pos_pop = []
         self.__optimal = None
         self.__expert.reset_weight()
-        self.__sample_count=0
+        self.__sample_count = 0
         return
 
     # parameters setting
@@ -539,13 +526,11 @@ class ExpAdaRacosOptimization:
 
     # sequential Racos for mixed optimization
     # the dimension type includes float, integer and categorical
-    def exp_ada_mix_opt(self, obj_fct=None, ss=2, bud=20, pn=1, rp=0.95, ub=1, at=5, step=1):
+    def exp_ada_mix_opt(self, obj_fct=None, ss=2, bud=20, pn=1, rp=0.95, ub=1, at=5, step=1, plot=False):
 
         sample_count = 0
         all_dist_count = 0
-        flag = False
-        res = []
-
+        log_buffer = []
         # initialize sample set
         self.clear()
         self.log_clear()
@@ -563,11 +548,22 @@ class ExpAdaRacosOptimization:
         budget_c = self.__sample_size + self.__positive_num
         while budget_c < self.__budget:
             budget_c += 1
-            res.append(self.__optimal.get_fitness())
             if budget_c % 10 == 0:
                 # print '======================================================'
                 print('budget ', budget_c, ':', self.__optimal.get_fitness())
-                flag = True
+                log_buffer.append('budget ' + str(budget_c) + ':' + str(self.__optimal.get_fitness()))
+                print(self.weights)
+                log_buffer.append(str(self.weights))
+                if plot:
+                    if False:  # plot two color
+                        index = [i * 2 + 1 for i in range(int(len(self.weights) / 2))]
+                        plt.scatter(range(len(self.weights[index])), self.weights[index], c='red')
+                        plt.scatter(range(len(self.weights[[i * 2 for i in range(int(len(self.weights) / 2))]])),
+                                    self.weights[[i * 2 for i in range(int(len(self.weights) / 2))]], c='blue')
+                    else:
+
+                        plt.scatter(range(len(self.weights)), self.weights)
+                        plt.show()
                 # self.__optimal.show_instance()
             adv_samples = []
             adv_inputs = []
@@ -618,9 +614,7 @@ class ExpAdaRacosOptimization:
             else:
                 truth_label = 0
 
-            t = np.array(prob_matrix)[:, max_index].T.tolist()
-            self.__expert.update_weights(np.array(prob_matrix)[:, max_index].T, truth_label, flag)
-            flag = False
+            self.weights = self.__expert.update_weights(np.array(prob_matrix)[:, max_index].T, truth_label)
 
             self.online_update(good_sample)
 
@@ -634,75 +628,4 @@ class ExpAdaRacosOptimization:
         # print 'average sample times of each sample:', float(sample_count) / self.__budget
         # print 'average shrink times of each sample:', float(all_dist_count) / sample_count
 
-        return res
-
-    def sample(self):
-
-        # initialization step
-        if self.__sample_count < self.__sample_size + self.__positive_num:
-            while True:
-                self.reset_model()
-                good_sample = self.random_instance(self.__dimension, self.__region, self.__label)
-                if self.instance_in_list(good_sample, self.__pop, self.__sample_count) is False:
-                    break
-        # optimization step
-        else:
-            adv_samples = []
-            adv_inputs = []
-            for i in range(self.__adv_threshold):
-                while True:
-                    self.reset_model()
-                    chosen_pos = self.__ro.get_uniform_integer(0, self.__positive_num - 1)
-                    model_sample = self.__ro.get_uniform_double(0.0, 1.0)
-                    if model_sample <= self.__rand_probability:
-                        dc = self.shrink_model(self.__pos_pop[chosen_pos], self.__pop)
-                    ins = self.pos_random_mix_isntance(self.__pos_pop[chosen_pos], self.__region, self.__label)
-                    if (self.instance_in_list(ins, self.__pos_pop, self.__positive_num) is False) and (
-                            self.instance_in_list(ins, self.__pop, self.__sample_size) is False):
-                        break
-                this_input = self.generate_inputs(self.__pos_pop[chosen_pos], ins)
-                adv_inputs.append(this_input)
-                adv_samples.append(ins)
-
-            probs, prob_matrix = self.__expert.predict(adv_inputs)
-            # print '------------------------------------------'
-            # print 'probs: ', probs
-            max_index = probs.index(max(probs))
-            # print 'max index: ', max_index
-            good_sample = adv_samples[max_index]
-            self.__predicts = np.array(prob_matrix)[:, max_index].T
-
-        return good_sample.get_features()
-
-    # x is a list, f_x is the evaluation value of x
-    def update_model(self, x, f_x):
-
-        ins = Instance(self.__dimension)
-        ins.set_features(x)
-        ins.set_fitness(f_x)
-
-        # initialization update
-        if self.__sample_count < self.__sample_size + self.__positive_num:
-            self.__pop.append(ins)
-        # optimization update
-        else:
-            if ins.get_fitness() < self.__optimal.get_fitness():
-                truth_label = 1
-            else:
-                truth_label = 0
-
-            self.__expert.update_weights(self.__predicts, truth_label,False)
-            self.online_update(ins)
-            self.update_optimal()
-
-        self.__sample_count += 1
-
-        # initialization process
-        if self.__sample_count == self.__sample_size + self.__positive_num:
-            self.__pop.sort(key=lambda instance: instance.get_fitness())
-            for i in range(self.__positive_num):
-                self.__pos_pop.append(self.__pop[0])
-                del self.__pop[0]
-            self.__optimal = self.__pos_pop[0].copy_instance()
-
-        return
+        return log_buffer

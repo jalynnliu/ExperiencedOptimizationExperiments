@@ -92,6 +92,52 @@ def list2string(list):
     return my_str
 
 
+def miss_fun_hdl(train_X, test_X):
+    def is_float(feature):
+        result = False
+        for item in feature:
+            try:
+                if type(eval(item)) == float:
+                    result = True
+                    break
+            except:
+                continue
+        return result
+
+    def compu_mean(feature):
+        result = []
+        for item in feature:
+            try:
+                if type(eval(item)) == float:
+                    result.append(item.astype(float))
+            except:
+                continue
+        result = np.array(result)
+        return np.mean(result)
+
+    def handle_missing(feature):
+        continous = is_float(feature)
+        if continous:
+            mean = compu_mean(feature)
+            result = [mean if i == '?' else i for i in feature]
+            pass
+        else:
+            chars = np.unique(feature, return_index=True)[0]
+            unchar = "?"
+            for char in chars:
+                if not char.__eq__('?'):
+                    unchar = char
+                    break
+            result = [unchar if i == '?' else i for i in feature]
+        return result
+
+    s1, s2 = train_X.shape
+    for i in range(s2):
+        train_X[:, i] = handle_missing(train_X[:, i])
+        test_X[:, i] = handle_missing(test_X[:, i])
+    return train_X, test_X
+
+
 def _encode(values, uniques=None, encode=False):
     if values.dtype == object:
         return _encode_python(values, uniques, encode)
@@ -291,7 +337,7 @@ class BenchmarkHelper():
                 result.append(feature)
         return result
 
-    def get_train_test_data(self, dataset_name, miss_fun_hdl=None):
+    def get_train_test_data(self, dataset_name):
         '''
         :param dataset_name: datasets name
         :param features:  the features in the datasets
@@ -302,9 +348,8 @@ class BenchmarkHelper():
         self.features = self.read_csv(feature_dir)
         features = self.remove_empty_str_array(self.features)
         train_X, test_X, train_Y, test_Y, val_X, val_Y = self.fetch_data(dataset_name)
-        ## here is code handling miss value
-        if miss_fun_hdl is not None:
-            train_X, test_X = miss_fun_hdl(train_X, test_X)
+        ## here is code handling miss valu
+        train_X, test_X = miss_fun_hdl(train_X, test_X)
         feature_unions, header = self.get_default_feature_unions_pipeline(features)
         label_pipeline = self.get_label_pipeline()
         train_Y = self.get_transformed_data(label_pipeline, train_Y.reshape((-1, 1)))
